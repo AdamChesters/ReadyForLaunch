@@ -1,0 +1,29 @@
+#include <windows.h>
+101 ICON "@CMAKE_CURRENT_SOURCE_DIR@/assets/ReadyForLaunch.ico"
+201 RCDATA "@CMAKE_CURRENT_SOURCE_DIR@/docs/mockups/readyforlaunch-ui.jpg"
+1 VERSIONINFO
+FILEVERSION 0,2,0,1
+PRODUCTVERSION 0,2,0,1
+FILEFLAGSMASK 0x3fL
+FILEFLAGS VS_FF_PRERELEASE
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+      VALUE "CompanyName", "Adam Chesters"
+      VALUE "FileDescription", "ReadyForLaunch Alpha"
+      VALUE "FileVersion", "@RFL_VERSION@"
+      VALUE "ProductName", "ReadyForLaunch"
+      VALUE "ProductVersion", "@RFL_VERSION@"
+      VALUE "LegalCopyright", "Copyright 2026 Adam Chesters"
+      VALUE "OriginalFilename", "ReadyForLaunch.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1200
+  END
+END

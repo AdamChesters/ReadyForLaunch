@@ -9,7 +9,7 @@ const char* phaseName(Phase p) {
 std::vector<std::string> Engine::begin(const Profile& p) {
     if(active())return {"A session is already active. Stop it before GO."};
     auto errors=validate(p);if(!errors.empty())return errors;
-    nodes_.clear();stopping_=false;force_=false;
+    nodes_.clear();stopping_=false;
     std::unordered_map<std::string,std::vector<size_t>> groups;
     for(auto& g:p.groups)for(auto& t:g.tasks)if(t.enabled) {groups[g.id].push_back(nodes_.size());Node n;n.task=t;n.group=g.id;nodes_.push_back(n);}
     for(auto& g:p.groups) {
@@ -20,7 +20,8 @@ std::vector<std::string> Engine::begin(const Profile& p) {
             auto& n=nodes_[indices[pos]]; n.dependencies=gate;
             if(pos) {
                 auto previous=indices[pos-1];
-                if(n.task.timing==Timing::Together)n.dependencies=nodes_[previous].dependencies;
+                if(n.task.timing==Timing::Go)n.dependencies.clear();
+                else if(n.task.timing==Timing::Together)n.dependencies=nodes_[previous].dependencies;
                 else n.dependencies.push_back({previous,n.task.timing==Timing::Delay,n.task.timing==Timing::Delay?n.task.delayMs:0});
             }
         }
@@ -38,7 +39,8 @@ bool Engine::retry(const std::string& id) {
 bool Engine::active() {
     for(auto& n:nodes_) {
         if(!stopping_&&(n.phase==Phase::Waiting||n.phase==Phase::Launching||n.phase==Phase::Running||n.phase==Phase::Attention))return true;
-        if(n.launch.ticket>=0&&backend_.ownedAlive(n.launch.ticket))return true;
+        if(n.launch.ticket>=0&&(backend_.ownedAlive(n.launch.ticket)||
+            (stopping_&&n.phase!=Phase::Stopped&&n.phase!=Phase::Attention&&backend_.poll(n.launch.ticket).alive)))return true;
     }return false;
 }
 void Engine::tick(int64_t now) {
@@ -46,6 +48,7 @@ void Engine::tick(int64_t now) {
     for(auto& n:nodes_) {
         if(!n.dispatched||n.phase==Phase::Failed||n.phase==Phase::Completed||n.phase==Phase::Stopped)continue;
         auto state=backend_.poll(n.launch.ticket);
+        n.alive=state.alive;
         if(state.exited) {
             n.exitSuccess=state.exitCode==0;
             if(n.task.readiness==Readiness::Completion&&n.exitSuccess) {
@@ -63,7 +66,7 @@ void Engine::tick(int64_t now) {
             else n.detectedAt=-1;
             if(detected&&now-n.detectedAt>=n.task.settleMs) {
                 n.ready=true;n.phase=Phase::Running;
-                n.detail=n.launch.reused?"Already running · left open on Stop":n.launch.managed?"Started by this session":"Launch only · stop unavailable";
+                n.detail=n.launch.reused?"Already running; another instance was not started":n.launch.managed?"Started by this session":"Started through its app launcher";
             }
         }
         if(!n.ready&&n.phase!=Phase::Failed&&now-n.dispatchedAt>=n.task.timeoutMs){n.phase=Phase::Failed;n.detail="Startup timed out; check the app before retrying";}
@@ -99,36 +102,34 @@ bool Engine::hasLiveDependent(size_t index) {
                 if(backend_.ownedAlive(nodes_[i].launch.ticket))return true;
                 if(!nodes_[i].launch.managed) {
                     auto state=backend_.poll(nodes_[i].launch.ticket);
-                    if(state.alive||!state.known)return true;
+                    if(state.alive)return true;
                 }
             }
             if(visit(i))return true;
         }return false;
     };return visit(index);
 }
-void Engine::stop(bool force,int64_t now) {
-    stopping_=true;force_=force_||force;
+void Engine::stop(int64_t now) {
+    stopping_=true;
     for(auto& n:nodes_)if(n.phase==Phase::Waiting)n.phase=Phase::Cancelled;
-    if(force)for(auto& n:nodes_)if(n.launch.ticket>=0&&backend_.ownedAlive(n.launch.ticket)) {
-        n.detail=backend_.close(n.launch.ticket,true);n.phase=n.detail.empty()?Phase::Stopping:Phase::Attention;n.stoppedAt=now;
-    }
     stopTick(now);
 }
 void Engine::stopTick(int64_t now) {
     for(size_t reverse=nodes_.size();reverse>0;--reverse) {
         auto i=reverse-1;auto& n=nodes_[i];if(n.launch.ticket<0)continue;
-        if(!backend_.ownedAlive(n.launch.ticket)) {
-            if(n.launch.managed){n.phase=Phase::Stopped;n.detail="Stopped";}
-            else {n.phase=Phase::Stopped;n.detail=n.launch.reused?"Left open · already running":"Left open · launch only";}
+        auto observation=backend_.poll(n.launch.ticket);
+        if(!backend_.ownedAlive(n.launch.ticket)&&!observation.alive) {
+            if(!observation.known){n.phase=Phase::Attention;n.detail="App process could not be identified; close it manually";}
+            else {n.phase=Phase::Stopped;n.detail="Stopped";}
             continue;
         }
         if(n.phase==Phase::Stopping) {
-            if(now-n.stoppedAt>=10000){n.phase=Phase::Attention;n.detail="Still running; close manually or use Emergency stop";}
+            if(now-n.stoppedAt>=10000){n.phase=Phase::Attention;n.detail="Still running; use the app's Exit or Windows Task Manager";}
             continue;
         }
         if(n.phase==Phase::Attention)continue;
-        if(!force_&&hasLiveDependent(i)){n.detail="Waiting for dependent apps to exit";continue;}
-        auto error=backend_.close(n.launch.ticket,force_);n.stoppedAt=now;n.phase=error.empty()?Phase::Stopping:Phase::Attention;
+        if(hasLiveDependent(i)){n.detail="Waiting for dependent apps to exit";continue;}
+        auto error=backend_.close(n.launch.ticket,false);n.stoppedAt=now;n.phase=error.empty()?Phase::Stopping:Phase::Attention;
         n.detail=error.empty()?"Requested exit":error;
     }
 }

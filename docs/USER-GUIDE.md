@@ -1,80 +1,106 @@
-# ReadyForLaunch 0.1.0 preview
+# ReadyForLaunch 0.2.0-alpha.1
 
-By Adam Chesters. Windows x64, portable build.
+**Intended for flight sims, usable for anything** — by Adam Chesters.
+
+Alpha software: verify your own app stack and keep a backup of your profiles. Windows x64; unsigned executable and installer.
 
 ## First launch
 
-Extract the ZIP into a folder you can keep, then run `ReadyForLaunch.exe`. Windows may show a reputation prompt because this preview is not code-signed. No installation, service, or administrator rights are normally required.
+Run Setup for a per-user installation, or extract the portable ZIP into a folder you can keep and run `ReadyForLaunch.exe`. No service or administrator rights are normally required. Windows may show a reputation prompt for this unsigned alpha.
 
-Choose a simulator profile. The five preset buttons start empty so nothing launches unexpectedly. Add your apps, arrange them, then press **GO**.
+Choose a simulator profile. The five starter buttons begin empty. Add your apps, arrange them, then press **GO**.
 
 ## Add apps
 
-**Running apps** is the default picker. It shows applications with visible top-level windows, with one entry per app. It excludes services, hidden windows, tray-only apps, and tool windows. Open an app's main window first if it is missing. Background helpers can still be added intentionally using another source.
+The source tabs are **Running apps → Steam → Installed apps → Browse EXE**. Running apps is selected each time you open the picker.
 
-The picker saves the app's executable or Windows identity, and recognises Steam apps when their executable is inside a discovered Steam library. A window title may become the initial display name; edit that name as desired. Review arguments and working folder if an app needs special launch options. Running-process command lines are not captured automatically.
+**Running apps** shows applications with visible top-level windows, with one entry per app. It excludes services, hidden windows, tray-only apps, and tool windows. Open an app's main window first if it is missing. Add a hidden helper intentionally using another source.
 
-Other tabs:
+The picker saves the executable or Windows identity and recognises Steam apps inside discovered Steam libraries. A window title may become the display name; edit it as desired. Review arguments and working folder if the app needs special options. Running-process command lines are not captured automatically.
 
-- **Browse EXE:** choose an executable. Arguments and working directory are optional.
-- **Steam:** choose an installed game/tool, or enter an App ID / Steam store URL. Set game launch arguments in Steam's own Properties dialog. Steam handles login, updates, and launch-option prompts.
-- **Installed apps:** choose a Windows packaged app or a supported Start Menu entry. Some shortcuts with special arguments or shell commands are omitted; use Running apps or Browse EXE instead.
+- **Steam:** choose an installed game/tool, or enter its App ID or Steam store URL. Steam handles login, updates, and launch prompts. Set game arguments in Steam's own Properties dialog.
+- **Installed apps:** choose a Windows packaged app or a supported Start Menu shortcut. Shortcuts with arbitrary shell commands or unsupported arguments are omitted.
+- **Browse EXE:** choose an executable; optionally set arguments and a working folder.
 
-Steam and packaged Windows launches are **launch-only in this preview**. Their existing launcher/broker cannot reliably establish which processes belong exclusively to this session, so Stop and Emergency stop leave them open. Direct EXE launches are tracked in a Windows job object, including their child processes. An app which cannot be tracked safely is reported as a failed launch.
+Discord and compatible Squirrel apps are stored using their stable `Update.exe --processStart App.exe` launcher, with a stable working folder. ReadyForLaunch tracks the app it starts, including when the launcher exits immediately. Old saved version-folder EXEs are converted when the stable launcher exists. Actual Discord updates still belong to Discord.
+
+Use an app row's **… → Open target folder** to open its containing or resolved install folder in Explorer. An unresolved or missing folder is reported in Status.
 
 ## Groups and timing
 
-Add groups with **+ Add group**. Drag a row's `::` handle to another row or group, or use the row's menu to move it. Each app's checkbox enables it for the profile.
+Add groups with **+ Add group**. Drag the `::` row handle or use the row menu to reorder/move apps. Each checkbox enables that app for the profile.
 
-The **first enabled task** exposes the group's start rule:
+The **first enabled task** shows the group's start rule:
 
-- **On GO:** start alongside all other independent groups.
-- **After group…:** select a named group and wait for all of its enabled apps to reach their configured startup/completion conditions.
+- **On GO:** start with other independent groups.
+- **After group…:** wait for all enabled apps in the selected group to reach their configured readiness/completion conditions.
 
-The dependency belongs to the group, so it survives changes to the first task. You can make a linear chain such as **VR → Flight tools → Simulator**, or start two groups after the same predecessor. Circular references and empty predecessor groups are rejected.
+This dependency belongs to the group and survives moving or disabling its first row. Build a linear chain such as **VR → Flight tools → Simulator**, or start two groups after the same predecessor. Circular references and empty predecessor groups are rejected.
 
-Later rows choose:
+Every later row offers:
 
-- **With previous:** launch alongside the previous row, using the same gate.
-- **After previous starts:** wait for the preceding app's readiness condition.
-- **Delay after previous:** wait the selected time from the preceding launch dispatch. Change the seconds inside the timing dropdown or App details.
-- **After previous finishes:** wait for a helper to finish successfully. Set the helper's readiness to **Successful completion** first.
+- **On GO:** start immediately, regardless of the row's position or its group's normal wait.
+- **With previous:** share the preceding enabled row's launch gate.
+- **After previous starts:** wait for the preceding app's readiness condition and any group gate.
+- **Delay after previous:** wait the chosen interval from the previous launch dispatch, plus any group gate.
+- **After previous finishes:** wait for a helper configured with **Successful completion** to finish successfully.
 
-If you disable a middle row, ordinary timing follows the nearest preceding enabled row. A failed app blocks dependent apps and groups; independent groups continue. Retry is available after the failed process has exited.
+Changing the first row to On GO removes that group's dependency. If a later On GO row becomes first through moving/disabling rows, the existing group rule takes precedence and is shown in the UI.
 
-## Readiness
+A failed app blocks its dependants while independent branches continue. Retry is available after the failed app has exited.
 
-In App details choose **Process detected**, **Window responding**, **Successful completion**, or **Confirm ready manually**. Add a settle delay and startup timeout if needed.
+## Readiness and status
 
-Steam entries selected from a running app usually have a detection EXE filled in. Other Steam entries default to manual confirmation; optionally choose a detection EXE to automate readiness. Detection allows observation, not permission to terminate brokered processes.
+App details offers **Process detected**, **Window responding**, **Successful completion**, or **Confirm ready manually**, with a settle delay and startup timeout.
 
-Process/window detection does not prove that a simulator has loaded a flight or that a headset is connected. For SteamVR, use manual confirmation after verifying its headset indicator. For VR2JB, verify the helper's exit-code behaviour before relying on Successful completion (this preview recognises code 0). Follow the helper's prerequisites, including closing conflicting VR apps first. No automatic VR2JB preset, firmware changes, or headset configuration are included.
+Steam entries chosen from Running apps usually include a detection EXE. Other Steam entries default to manual confirmation; select a detection EXE for automatic readiness. Steam updates or long loading times may need a longer timeout.
 
-## Stopping a session
+Lights sit to the left of each row's status: **off** when not running, **green** when running, **yellow** while queued. Idle observation refreshes periodically. Detection can be unavailable for protected processes or brokered apps.
 
-**Stop** cancels pending launches and requests app closure in reverse dependency order. Apps can refuse, prompt for unsaved work, or hide in the tray. After ten seconds, a remaining app is shown as Needs attention. Close it manually or choose Emergency stop.
+Before launch, ReadyForLaunch checks for an identified running instance. If found, it skips another launch and warns in **Status**. The existing app still has to satisfy the configured readiness condition. Status holds a scrollable, timestamped log of recent alerts and outcomes.
 
-Existing instances are reused and marked **Already running**. Both stop actions leave those instances open. Launch-only apps also remain open. A directly launched prerequisite is retained while an observed or unresolved dependent app remains open; Emergency stop can explicitly force the directly launched apps to end.
+A detected process or responding window does not prove a flight has loaded or a headset is connected. For SteamVR, confirm readiness after checking the headset indicator. For VR2JB, verify its real exit-code behaviour before using Successful completion, which requires code 0. Follow that helper's own prerequisites. No automatic unlock preset or headset setup is included.
 
-**Emergency stop** cancels pending work and forcibly terminates this session's directly launched process trees. Unsaved state in those apps can be lost. It does not kill Steam, pre-existing apps, or unrelated processes.
+## Stop
 
-PSVR2SimShaker hides its window on close. Use its tray/settings Exit action if you need it to shut down gracefully; ReadyForLaunch does not yet provide a dedicated SimShaker exit integration.
+Hover text: **gracefully commands shutdown of apps in the list. Some may ignore it**
 
-## Profiles, settings, and tray
+Stop cancels queued launches and asks identified apps participating in the session to close in reverse dependency order. **This includes apps that were already running and reused by GO.** It does not close disabled rows or apps that have not participated in the session.
 
-Use the small **+** beside Custom profiles to create an empty profile or duplicate the current profile. Settings lets you rename profiles and delete custom profiles. Each profile stores its own app configuration. Changes autosave to `%LOCALAPPDATA%\ReadyForLaunch\settings.json`, with a last-good backup.
+Apps can refuse, prompt for unsaved work, or hide in the tray. After ten seconds, remaining apps show **Needs attention**. Prerequisites remain open while a detected dependent is still running. If a brokered target cannot be identified, Status tells you to close it manually.
 
-While a session is active, profile editing is locked. Closing the ReadyForLaunch window hides it to the tray; use its tray icon to reopen it or stop the session. With no active session, closing the window exits.
+There is no Emergency stop or force-kill action. Use the app's own Exit command or Windows Task Manager when required. In particular, apps such as PSVR2SimShaker can hide instead of exiting on a normal window-close request.
+
+## Profiles and Help
+
+Right-click any profile button or custom entry for **Rename**, **Copy from…**, **Copy to…**, and **Delete**. Copy replaces the destination's app/group configuration while retaining its name and tab identity. Replacement and deletion ask for confirmation. At least one profile must remain.
+
+Duplicate names are allowed and have distinct internal identities. Use **+** beside Custom profiles to create an empty profile or duplicate the current one. Changes autosave to `%LOCALAPPDATA%\ReadyForLaunch\settings.json`, with a last-good `.bak` backup.
+
+**Help** displays brief instructions and the original approved mockup. The concept image includes some controls removed during review; the current app and this guide describe the implemented behavior.
+
+Editing is locked during a session. Closing ReadyForLaunch then hides it to the tray, whose menu can reopen it or Stop the session. With no active session, window close exits.
+
+## Updates
+
+The top-right version indicator checks the public GitHub release feed on startup, including alpha releases. Click it to check again, read the current/latest version, open Releases, or download an available update.
+
+Downloads are checked against the release asset's size and SHA-256 digest before the installer opens. Installation is unavailable during an active session. The per-user installer replaces application files and preserves the profile folder; it requires any running ReadyForLaunch instance to close. Uninstall also leaves your profiles in place.
+
+A portable copy uses the same installer update path, targeting the current app folder. To remain entirely portable, download and extract the ZIP yourself instead. The app does not upload profiles or status logs; its network requests are update checks and downloads. Normal Steam launches use Steam's own protocol.
+
+This alpha reads settings from 0.1.0 and saves schema 2. Older builds cannot read the new options; back up settings before downgrading.
 
 ## Next version
 
-V2 will add **Update state**, capturing window positions, sizes, monitor assignments, and window states per profile for restoration on later launches. It is deliberately absent from this first preview.
+V2 will add **Update state** to save and restore window positions, sizes, monitors, and states per profile. It is not included in this alpha.
 
 ## Development options
 
 - `--data-dir <folder>` uses an isolated settings directory.
-- `--preview` displays the example stack and prevents GO from launching it.
-- `--capture <absolute-path.png>` renders the actual interface to a PNG and exits without showing a window.
-- `--capture-view picker|editor|settings|group` opens that actual dialog for visual verification; use with `--capture`.
+- `--preview` displays an illustrative stack and prevents GO from launching it.
+- `--capture <absolute-path.png>` renders the interface to a PNG without showing a window, then exits.
+- `--capture-view picker|editor|settings|group|help|status|updates` opens that view for a capture.
+- `--capture-scale 1|1.5|2` selects display scaling for a capture.
 
-Capture files remain local. There is no telemetry upload, cloud account, or background network service.
+Preview/capture mode disables network update checks and uses sample data where appropriate.

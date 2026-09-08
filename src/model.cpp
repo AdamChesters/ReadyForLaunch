@@ -12,7 +12,7 @@ std::string newId() {
     static std::mt19937_64 random(std::random_device{}());
     std::ostringstream out; out << std::hex << random() << random(); return out.str();
 }
-const char* sourceName(Source s) { return s==Source::Exe?"EXE":s==Source::Steam?"STEAM":"INSTALLED"; }
+const char* sourceName(Source s) { return s==Source::Exe?"EXE":s==Source::Steam?"STEAM":s==Source::Squirrel?"APP":"INSTALLED"; }
 Settings defaults() {
     Settings s;
     for (auto name : {"DCS World","MSFS 2024","MSFS 2020","X-Plane 12","IL-2"}) {
@@ -28,6 +28,9 @@ Profile duplicate(const Profile& p, std::string name) {
     for(auto& g:result.groups) { auto old=g.id; g.id=newId(); ids[old]=g.id; for(auto& t:g.tasks)t.id=newId(); }
     for(auto& g:result.groups)if(!g.afterGroup.empty()&&ids.contains(g.afterGroup))g.afterGroup=ids.at(g.afterGroup);
     return result;
+}
+void copyConfiguration(Profile& destination,const Profile& source) {
+    auto copy=duplicate(source,destination.name);destination.groups=std::move(copy.groups);
 }
 bool canFollow(const Profile& p,const std::string& group,const std::string& predecessor) {
     auto id=predecessor; std::unordered_set<std::string> seen;
@@ -55,6 +58,7 @@ std::vector<std::string> validate(const Profile& p) {
             ++enabled;
             if(t.name.empty()||t.target.empty())errors.push_back(g.name+": choose a launch target for "+t.name);
             if(t.source==Source::Steam&&(t.target.empty()||t.target.find_first_not_of("0123456789")!=std::string::npos))errors.push_back(t.name+": Steam App ID must contain digits only");
+            if(t.source==Source::Squirrel&&(t.application.empty()||t.application.find_first_of("/\\:")!=std::string::npos))errors.push_back(t.name+": invalid application filename");
             if(t.delayMs<0||t.delayMs>3600000||t.timeoutMs<1000||t.timeoutMs>3600000||t.settleMs<0||t.settleMs>3600000)errors.push_back(t.name+": timing is outside the supported range");
             if(previous&&t.timing==Timing::Finished&&previous->readiness!=Readiness::Completion)errors.push_back(t.name+": set the previous app's readiness to Successful completion");
             previous=&t;
@@ -64,18 +68,19 @@ std::vector<std::string> validate(const Profile& p) {
     return errors;
 }
 Json serialize(const Settings& s) {
-    Json root={{"schemaVersion",1},{"selected",s.selected},{"profiles",Json::array()}};
+    Json root={{"schemaVersion",2},{"selected",s.selected},{"profiles",Json::array()}};
     for(auto& p:s.profiles) {
         Json jp={{"id",p.id},{"name",p.name},{"builtin",p.builtin},{"groups",Json::array()}};
         for(auto& g:p.groups) {
             Json jg={{"id",g.id},{"name",g.name},{"afterGroup",g.afterGroup},{"tasks",Json::array()}};
-            for(auto& t:g.tasks)jg["tasks"].push_back({{"id",t.id},{"name",t.name},{"source",int(t.source)},{"target",t.target},{"arguments",t.arguments},{"directory",t.directory},{"probe",t.probe},{"timing",int(t.timing)},{"readiness",int(t.readiness)},{"enabled",t.enabled},{"delayMs",t.delayMs},{"timeoutMs",t.timeoutMs},{"settleMs",t.settleMs}});
+            for(auto& t:g.tasks)jg["tasks"].push_back({{"id",t.id},{"name",t.name},{"source",int(t.source)},{"target",t.target},{"arguments",t.arguments},{"directory",t.directory},{"probe",t.probe},{"application",t.application},{"timing",int(t.timing)},{"readiness",int(t.readiness)},{"enabled",t.enabled},{"delayMs",t.delayMs},{"timeoutMs",t.timeoutMs},{"settleMs",t.settleMs}});
             jp["groups"].push_back(jg);
         } root["profiles"].push_back(jp);
     } return root;
 }
 Settings deserialize(const Json& j) {
-    if(j.at("schemaVersion")!=1)throw std::runtime_error("Unsupported settings version");
+    const auto schema=j.at("schemaVersion").get<int>();
+    if(schema!=1&&schema!=2)throw std::runtime_error("Unsupported settings version");
     Settings s; s.selected=j.value("selected","");
     for(auto& jp:j.at("profiles")) {
         Profile p{jp.at("id"),jp.at("name"),jp.value("builtin",false),{}};
@@ -84,9 +89,10 @@ Settings deserialize(const Json& j) {
             for(auto& jt:jg.at("tasks")) {
                 Task t; t.id=jt.at("id"); t.name=jt.at("name");t.target=jt.at("target");
                 int source=jt.value("source",0),timing=jt.value("timing",1),ready=jt.value("readiness",0);
-                if(source<0||source>2||timing<0||timing>3||ready<0||ready>3)throw std::runtime_error("Unknown task option");
+                if(source<0||source>3||timing<0||timing>4||ready<0||ready>3)throw std::runtime_error("Unknown task option");
                 t.source=Source(source);t.timing=Timing(timing);t.readiness=Readiness(ready);
                 t.arguments=jt.value("arguments","");t.directory=jt.value("directory","");t.probe=jt.value("probe","");
+                t.application=jt.value("application","");
                 t.enabled=jt.value("enabled",true);t.delayMs=jt.value("delayMs",5000);t.timeoutMs=jt.value("timeoutMs",60000);t.settleMs=jt.value("settleMs",1000);
                 g.tasks.push_back(t);
             }p.groups.push_back(g);

@@ -1,27 +1,40 @@
-# First preview verification
+# Alpha verification
 
-Local verification: **9 September 2026**, Windows x64, Visual Studio 2026 C++ tools, Release configuration with the static C++ runtime. No flight simulator, Steam game, VR2JB, or headset operation was launched as part of these checks.
+Local verification: **9 September 2026**, Windows x64, Visual Studio 2026 C++ tools, Release configuration with the static runtime. No flight simulator, Steam game, Discord, VR2JB, or headset operation was launched or stopped during these checks.
 
 ## Automated checks
 
-`ctest -C Release --output-on-failure` runs two suites:
+`ctest -C Release --output-on-failure` runs four suites:
 
-- **Scheduler and profiles:** linear group chains, first enabled task retaining the group gate, circular/empty dependency rejection, parallel members and shared predecessors, readiness settle time, dispatch-relative delay, successful helper completion, manual confirmation, timeout, failed launch/retry, stop cancelling pending work, reverse shutdown order, protection of reused apps, protection of prerequisites whose reused dependents remain open, exited prerequisites, launch exceptions, profile duplication, and JSON round trips.
-- **Windows process lifecycle:** directly launched fixture ownership, graceful closure, refusal to close, force termination of an owned child process tree, refusing to terminate a pre-existing instance, successful helper exit codes, missing targets, settings backup, and the packaged-app activation provider being available. The running-app picker includes a visible fixture once and excludes hidden and tool-window fixtures. Test fixtures clean up only their own process jobs.
+- **Scheduler and profiles:** 52 assertions covering linear group chains, first-row dependency retention, cycles/empty predecessors, parallel members/shared predecessors, settle time, dispatch-relative delay, completion/manual readiness, timeouts, failures/retry, cancellation, reverse graceful shutdown, reused-app closure, refusal without escalation, later-row On GO, profile copy identity/dependency remapping, JSON round trips, and schema migration.
+- **Windows process lifecycle:** isolated visible/hidden/tool-window fixtures, process ownership, graceful close/refusal, child tracking, helper completion, missing targets, settings backup, packaged-app provider availability, and filtering the Running apps list. A Squirrel-style fixture launches its actual app then exits; removing the old version folder and installing a new one verifies stable target handling. Pre-existing fixture instances are detected and reused. Forced fixture cleanup is restricted to test-owned processes.
+- **Update verification:** alpha semantic-version precedence, release/asset selection, permitted download hosts, missing checksums/assets, size and SHA-256 verification, corrupted/truncated installers, and cancellation.
+- **Profile UI interactions:** a real ImGui/WARP render context hovers duplicate-name profile buttons and custom entries, opens the right-click Rename action, saves a rename, and selects the second duplicate entry independently. Conflicting-ID diagnostics remain enabled.
 
-Read-only discovery also enumerated real running application windows, Steam manifests across local libraries, and Windows/Start Menu entries. Enumeration is not proof that every discovered app will launch successfully.
+Read-only discovery enumerated actual running windows, Steam manifests across local libraries, and Windows/Start Menu entries. Discovery is not proof that every app launches successfully.
 
-## Visual and packaging checks
+## Visual verification
 
-The executable's native render capture was used to inspect the main window and the picker, app details, settings, and group dialogs. The README screenshot is the real application rendering an illustrative preview stack. It contains no captured personal window titles. `--preview` prevents that stack from launching.
+The application's native capture path was used to inspect the main interface at **100%, 150%, and 200%** scaling, plus the picker, app editor, settings, groups, Help, Status, and Updates views.
 
-The portable package contains the executable, user guide, test notes, and dependency licence notices. A package smoke check renders the executable from its staged location with an isolated data directory. The ZIP has a SHA-256 checksum.
+The README screenshot is the actual app rendering an illustrative preview stack. No personal window titles are included. Preview mode prevents GO from launching that stack. Help was checked with the embedded approved JPG; Status was checked with enough sample alerts to scroll.
+
+## Build and packaging
+
+GitHub Actions builds Release, runs all four suites, and creates a portable ZIP plus a per-user Inno Setup installer. Both include the executable, documentation, icon assets, GPL license, and dependency notices. SHA256SUMS accompanies the packages.
+
+A package smoke check should render the staged/released executable using an isolated data directory. For each public release, run `update_tests.exe --live <download-folder>` to fetch release metadata and download/verify its actual installer without executing it. The public Actions run and release assets provide build-specific evidence.
+
+Installer source preserves profile data and requires ReadyForLaunch to close before replacement. Full interactive install, upgrade, uninstall, Windows reputation prompts, and the real app stack remain part of the user alpha test cycle.
 
 ## First live iteration
 
-- Configure the real VR2JB → SteamVR → PSVR2SimShaker sequence. Verify helper completion and SteamVR headset readiness manually before enabling automatic gates. Use SimShaker's own Exit command when needed.
-- Check actual Steam launch options, Steam updates/login prompts, packaged-app activation, and representative EXEs selected from Running apps. Steam and packaged Windows apps remain launch-only in this preview.
-- Check apps requiring elevation, single-instance launchers that hand off to another process, tray apps, apps with unsaved-work prompts, and apps whose main window belongs to a child process. These can require manual readiness or app-specific integration.
-- Check mixed-DPI monitors, resizing, keyboard navigation, and very long application/profile names with the user's normal desktop layout.
+- Configure the real VR2JB → SteamVR → PSVR2SimShaker sequence. Verify helper completion and headset readiness manually before relying on automatic gates.
+- Exercise Steam launch options, Steam open/closed, updates/login prompts, Windows packaged-app activation, and representative EXEs from Running apps.
+- Verify Discord after a real update; the automated test covers the version-folder pattern, not Discord's full updater.
+- Check elevated apps, single-instance handoffs, tray apps, unsaved-work prompts, and child-process windows. These can need manual readiness or an app-specific exit action.
+- Confirm that already-running session apps warn and receive normal close requests on Stop.
+- Test mixed-DPI monitor movement, resizing, keyboard navigation, and long profile/app names on the user's desktop.
+- Test the first interactive installer update and confirm the existing profiles remain available.
 
-V2 window-position capture/restoration and the **Update state** button are requirements in the plan, not implemented features of 0.1.0.
+V2 window-position capture/restoration and **Update state** remain planned.
