@@ -1,6 +1,8 @@
 # Build and editor output
 /build/
 /out/
+/dist/
+/vcpkg_installed/
 /.vs/
 /.idea/
 *.user
