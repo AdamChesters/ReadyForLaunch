@@ -1,4 +1,6 @@
-![ReadyForLaunch — Launch all the apps you need at once, how you need to launch them](assets/social-preview.jpg)
+<p align="center">
+  <img src="assets/social-preview.jpg" alt="ReadyForLaunch — Launch all the apps you need at once, how you need to launch them">
+</p>
 
 # ReadyForLaunch
 
