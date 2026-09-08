@@ -151,7 +151,7 @@ void Ui::appPicker() {
     }
     if(ImGui::BeginTabBar("Sources")) {
         const char* tabs[]={"Running apps","Browse EXE","Steam","Installed apps"};
-        for(int k=0;k<4;++k)if(ImGui::BeginTabItem(tabs[k])) {
+        for(int k=0;k<4;++k)if(ImGui::BeginTabItem(tabs[k],nullptr,k==0&&ImGui::IsWindowAppearing()?ImGuiTabItemFlags_SetSelected:ImGuiTabItemFlags_None)) {
             if(pickerTab_!=k){pickerTab_=k;choices_.clear();search_.clear();if(k!=1)scan(k);}
             ImGui::EndTabItem();
         }ImGui::EndTabBar();
