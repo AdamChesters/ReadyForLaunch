@@ -1,4 +1,4 @@
-<img src="assets/ReadyForLaunch.png" width="96" alt="ReadyForLaunch icon">
+![ReadyForLaunch — Launch all the apps you need at once, how you need to launch them](assets/social-preview.jpg)
 
 # ReadyForLaunch
 
