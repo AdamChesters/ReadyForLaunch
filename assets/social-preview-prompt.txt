@@ -1,0 +1,12 @@
+Use case: ads-marketing.
+Create a polished GitHub social preview banner for ReadyForLaunch, exactly 1280 x 640 pixels, 2:1 landscape, opaque dark background, optimized for legible social link cards.
+Reference image 1 is the existing app icon: preserve the distinctive white R and cyan forward arrow on its dark navy rounded square. Reference image 2 is the real app UI, used for visual style only.
+Design: refined minimal software launch announcement. Almost-black navy/teal background, subtle cyan runway-like perspective guide lines fading into the bottom right, restrained soft lighting, no aircraft photos. Large crisp icon at left, brand/title dominant across the center-right. Title in bold elegant serif matching the app's Georgia-like heading, light cyan. Supporting text in clean sans-serif, off-white. Small ALPHA pill. A simple understated visual motif of three small app cards joining into one cyan GO button in the lower right conveys multiple apps launched as one stack. Do not recreate the full UI or add tiny illegible text.
+Exact text only:
+"ReadyForLaunch"
+"Intended for flight sims,"
+"usable for anything"
+"AdamChesters"
+"ALPHA"
+"GO"
+Leave generous safe margins of at least 60px all around. Balanced, premium, compact, uncluttered. Title must remain extremely readable at half size. Preserve exact spelling and capitalisation. No other text, fake feature claims, platform logos or watermarks. Export an opaque PNG at 1280x640, ideally below 1 MB.
