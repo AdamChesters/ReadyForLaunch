@@ -65,7 +65,11 @@ Distribute a portable ZIP and per-user Inno Setup installer. The updater opens t
 - [x] Emergency stop removed; requested Stop tooltip added.
 - [x] Subtitle in UI/README, version at top, prominent alpha labeling.
 - [x] PSVR2SimShaker-derived updater, installer packaging, and original ReadyForLaunch icon.
-- [x] Public repository and alpha release preparation.
+- [x] Public repository and published v0.2.0-alpha.1 prerelease with installer, portable ZIP, and checksums.
+- [x] Silent installation over the first preview, with backup and unchanged-profile hash verification.
+- [x] Revised social graphic with capitalised tagline, under-1-MB JPG, and centered README banner.
+
+The social graphic is committed and displayed in the README. This session did not apply it in GitHub's separate Social preview setting because the browser was not signed in; that setting remains unverified. See [asset notes](../assets/README.md). Actual app-stack testing and v2 window restoration remain outstanding.
 
 ## 9. Acceptance and first live iteration
 

@@ -23,9 +23,13 @@ The README screenshot is the actual app rendering an illustrative preview stack.
 
 GitHub Actions builds Release, runs all four suites, and creates a portable ZIP plus a per-user Inno Setup installer. Both include the executable, documentation, icon assets, GPL license, and dependency notices. SHA256SUMS accompanies the packages.
 
-A package smoke check should render the staged/released executable using an isolated data directory. For each public release, run `update_tests.exe --live <download-folder>` to fetch release metadata and download/verify its actual installer without executing it. The public Actions run and release assets provide build-specific evidence.
+A package smoke check passed for both the locally staged executable and the downloaded CI-built executable using isolated data directories, including the embedded Help image. The published alpha also passed `update_tests.exe --live <download-folder>`: public release lookup, HTTPS installer download, and SHA-256 verification. That download check did not execute the installer.
 
-Installer source preserves profile data and requires ReadyForLaunch to close before replacement. Full interactive install, upgrade, uninstall, Windows reputation prompts, and the real app stack remain part of the user alpha test cycle.
+Release evidence: [successful Actions run](https://github.com/AdamChesters/ReadyForLaunch/actions/runs/34255399890), source commit `d1d7957b5b5a8a4fdfbfa8a477530fc39a3e3295`, and [v0.2.0-alpha.1 prerelease](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.1). Both downloaded package checksums were verified. Later social artwork and README edits are on main; they do not change the published binary.
+
+At the user's request, the verified installer was subsequently run silently over the existing portable 0.1.0 folder. It exited successfully, the installed executable reports 0.2.0-alpha.1, and the settings file's SHA-256 was unchanged across installation. The previous app and profile folder were backed up, and the Start Menu shortcut was verified. ReadyForLaunch was not running during this installation.
+
+Interactive installation, the in-app download-to-install handoff, uninstall, Windows reputation prompts, and the real app stack remain unverified. The successful silent installation must not be described as verification of those separate flows.
 
 ## First live iteration
 
