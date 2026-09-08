@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <string>
+#include <filesystem>
 
 namespace {
 bool refuse=false;
@@ -12,6 +13,14 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM w,LPARAM l) {
 }
 int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int) {
     auto command=std::wstring(GetCommandLineW());
+    if(command.find(L"--processStart")!=std::wstring::npos) {
+        wchar_t module[32768];GetModuleFileNameW(nullptr,module,32768);auto root=std::filesystem::path(module).parent_path();
+        std::filesystem::path version;for(auto& entry:std::filesystem::directory_iterator(root))if(entry.is_directory()&&entry.path().filename().wstring().rfind(L"app-",0)==0&&entry.path().filename()>version.filename())version=entry.path();
+        auto executable=version/L"Fixture.exe";std::wstring arguments=L"\""+executable.wstring()+L"\" --visible";
+        STARTUPINFOW startup{sizeof(startup)};PROCESS_INFORMATION info{};
+        if(!CreateProcessW(executable.c_str(),arguments.data(),nullptr,nullptr,FALSE,0,nullptr,root.c_str(),&startup,&info))return 7;
+        CloseHandle(info.hThread);CloseHandle(info.hProcess);return 0;
+    }
     if(command.find(L"--success")!=std::wstring::npos){Sleep(150);return 0;}
     if(command.find(L"--failure")!=std::wstring::npos)return 7;
     refuse=command.find(L"--refuse")!=std::wstring::npos;

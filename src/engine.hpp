@@ -19,13 +19,13 @@ struct Node {
     Task task; std::string group;
     std::vector<Dependency> dependencies;
     Phase phase=Phase::Waiting; Launch launch;
-    bool dispatched=false, ready=false, confirmed=false, exitSuccess=false;
+    bool dispatched=false, ready=false, confirmed=false, exitSuccess=false, alive=false;
     int64_t dispatchedAt=0, detectedAt=-1, stoppedAt=0;
     std::string detail;
 };
 class Engine {
     Backend& backend_;
-    bool stopping_=false, force_=false;
+    bool stopping_=false;
     std::vector<Node> nodes_;
     void stopTick(int64_t now);
     bool hasLiveDependent(size_t index);
@@ -33,7 +33,7 @@ public:
     explicit Engine(Backend& backend):backend_(backend){}
     std::vector<std::string> begin(const Profile& profile);
     void tick(int64_t now);
-    void stop(bool force,int64_t now);
+    void stop(int64_t now);
     void confirm(const std::string& id);
     bool retry(const std::string& id);
     bool active();

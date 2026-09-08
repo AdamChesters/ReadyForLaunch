@@ -1,0 +1,5 @@
+#pragma once
+namespace rfl {
+inline constexpr char appVersion[] = "@RFL_VERSION@";
+inline constexpr char appVersionDisplay[] = "@RFL_VERSION@ (Alpha)";
+}

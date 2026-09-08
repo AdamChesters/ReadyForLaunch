@@ -7,6 +7,7 @@
 #include <wrl/client.h>
 #include <shellapi.h>
 #include <fstream>
+#include <algorithm>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND,UINT,WPARAM,LPARAM);
 namespace {
@@ -61,10 +62,10 @@ LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM w,LPARAM l) {
     case trayEvent:
         if(l==WM_LBUTTONUP||l==WM_LBUTTONDBLCLK)show(window);
         if(l==WM_RBUTTONUP) {
-            auto menu=CreatePopupMenu();AppendMenuW(menu,MF_STRING,1,L"Open ReadyForLaunch");AppendMenuW(menu,MF_STRING,2,L"Stop session");AppendMenuW(menu,MF_STRING,3,L"Emergency stop");
+            auto menu=CreatePopupMenu();AppendMenuW(menu,MF_STRING,1,L"Open ReadyForLaunch");AppendMenuW(menu,MF_STRING,2,L"Stop session");
             if(!ui||!ui->active())AppendMenuW(menu,MF_STRING,4,L"Exit");POINT cursor;GetCursorPos(&cursor);SetForegroundWindow(window);
             auto action=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_NONOTIFY,cursor.x,cursor.y,0,window,nullptr);DestroyMenu(menu);
-            if(action==1)show(window);if(action==2&&ui)ui->stop(false);if(action==3&&ui)ui->stop(true);if(action==4)DestroyWindow(window);
+            if(action==1)show(window);if(action==2&&ui)ui->stop();if(action==4)DestroyWindow(window);
         }return 0;
     }
     return DefWindowProcW(window,message,w,l);
@@ -73,35 +74,37 @@ LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM w,LPARAM l) {
 int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int) {
     CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);int result=0;bool unattended=false;
     try {
-        auto directory=rfl::dataDirectory();std::filesystem::path screenshot;bool preview=false;std::string captureView;
+        auto directory=rfl::dataDirectory();std::filesystem::path screenshot;bool preview=false;std::string captureView;float captureScale=0;
         int count=0;auto args=CommandLineToArgvW(GetCommandLineW(),&count);
         for(int i=1;i<count;++i) {
             if(std::wstring(args[i])==L"--data-dir"&&i+1<count)directory=args[++i];
             else if(std::wstring(args[i])==L"--capture"&&i+1<count){screenshot=args[++i];unattended=true;}
             else if(std::wstring(args[i])==L"--capture-view"&&i+1<count)captureView=rfl::utf8(args[++i]);
+            else if(std::wstring(args[i])==L"--capture-scale"&&i+1<count)captureScale=std::clamp(wcstof(args[++i],nullptr),1.f,2.5f);
             else if(std::wstring(args[i])==L"--preview")preview=true;
-        }LocalFree(args);
+        }LocalFree(args);if(screenshot.empty())captureScale=0;
         HANDLE mutex=CreateMutexW(nullptr,FALSE,L"Local\\ReadyForLaunch_v1");
         if(screenshot.empty()&&mutex&&GetLastError()==ERROR_ALREADY_EXISTS){auto other=FindWindowW(className,nullptr);if(other)PostMessageW(other,showEvent,0,0);CloseHandle(mutex);CoUninitialize();return 0;}
         ImGui_ImplWin32_EnableDpiAwareness();
-        WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=procedure;wc.hInstance=instance;wc.lpszClassName=className;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hIcon=LoadIconW(nullptr,IDI_APPLICATION);RegisterClassExW(&wc);
-        auto window=CreateWindowExW(0,className,L"ReadyForLaunch — by Adam Chesters",WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,1100,860,nullptr,nullptr,instance,nullptr);
+        WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=procedure;wc.hInstance=instance;wc.lpszClassName=className;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hIcon=LoadIconW(instance,MAKEINTRESOURCEW(101));wc.hIconSm=static_cast<HICON>(LoadImageW(instance,MAKEINTRESOURCEW(101),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));RegisterClassExW(&wc);
+        auto window=CreateWindowExW(0,className,L"ReadyForLaunch Alpha — by Adam Chesters",WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,1100,890,nullptr,nullptr,instance,nullptr);
         if(!window)throw std::runtime_error("Window creation failed");graphics(window);
         IMGUI_CHECKVERSION();ImGui::CreateContext();auto& io=ImGui::GetIO();io.IniFilename=nullptr;io.ConfigFlags|=ImGuiConfigFlags_NavEnableKeyboard;
         io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeui.ttf",19);io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/georgiab.ttf",34);io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/seguisb.ttf",19);
-        rfl::applyTheme();scale=float(GetDpiForWindow(window))/96;ImGui::GetStyle().FontScaleDpi=scale;ImGui::GetStyle().ScaleAllSizes(scale);
+        rfl::applyTheme();scale=captureScale?captureScale:float(GetDpiForWindow(window))/96;ImGui::GetStyle().FontScaleDpi=scale;ImGui::GetStyle().ScaleAllSizes(scale);
+        if(scale!=1){int width=int(1100*scale),height=int(890*scale);if(screenshot.empty()){MONITORINFO monitor{sizeof(monitor)};if(GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor)){width=std::min(width,int(monitor.rcWork.right-monitor.rcWork.left));height=std::min(height,int(monitor.rcWork.bottom-monitor.rcWork.top));}}SetWindowPos(window,nullptr,0,0,width,height,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);}
         ImGui_ImplWin32_Init(window);ImGui_ImplDX11_Init(device.Get(),context.Get());
         NOTIFYICONDATAW tray{};tray.cbSize=sizeof(tray);tray.hWnd=window;tray.uID=1;tray.uFlags=NIF_MESSAGE|NIF_ICON|NIF_TIP;tray.uCallbackMessage=trayEvent;tray.hIcon=wc.hIcon;wcscpy_s(tray.szTip,L"ReadyForLaunch");
         if(screenshot.empty())Shell_NotifyIconW(NIM_ADD,&tray);
         {
-            rfl::Ui app(window,directory,preview);app.captureView(captureView);ui=&app;if(screenshot.empty())show(window);
+            rfl::Ui app(window,device.Get(),directory,preview,!screenshot.empty()||preview);app.captureView(captureView);ui=&app;if(screenshot.empty())show(window);
             bool quit=false;int frames=0;ULONGLONG lastTick=0,captureStart=GetTickCount64();
             while(!quit) {
                 MSG msg;while(PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){if(msg.message==WM_QUIT)quit=true;TranslateMessage(&msg);DispatchMessageW(&msg);}if(quit)break;
                 auto now=GetTickCount64();if(now-lastTick>=100){app.tick();lastTick=now;}
                 if((hidden||IsIconic(window))&&screenshot.empty()){MsgWaitForMultipleObjects(0,nullptr,FALSE,100,QS_ALLINPUT);continue;}
                 if(resize){view.Reset();swapchain->ResizeBuffers(0,0,0,DXGI_FORMAT_UNKNOWN,0);createView();resize=false;}
-                float nextScale=float(GetDpiForWindow(window))/96;if(nextScale!=scale){rfl::applyTheme();scale=nextScale;ImGui::GetStyle().ScaleAllSizes(scale);ImGui::GetStyle().FontScaleDpi=scale;}
+                float nextScale=captureScale?captureScale:float(GetDpiForWindow(window))/96;if(nextScale!=scale){rfl::applyTheme();scale=nextScale;ImGui::GetStyle().ScaleAllSizes(scale);ImGui::GetStyle().FontScaleDpi=scale;}
                 ImGui_ImplDX11_NewFrame();ImGui_ImplWin32_NewFrame();ImGui::NewFrame();app.render();ImGui::Render();
                 auto target=view.Get();context->OMSetRenderTargets(1,&target,nullptr);const float color[]={.025f,.029f,.034f,1};context->ClearRenderTargetView(view.Get(),color);ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
                 if(!screenshot.empty()&&++frames>=5&&GetTickCount64()-captureStart>1200){capture(screenshot);break;}

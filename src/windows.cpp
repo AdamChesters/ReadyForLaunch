@@ -13,6 +13,8 @@
 #include <unordered_set>
 #include <regex>
 #include <cwctype>
+#include <bcrypt.h>
+#include <iomanip>
 
 namespace rfl {
 using Microsoft::WRL::ComPtr;
@@ -40,6 +42,21 @@ std::string systemError(DWORD code) {
 fs::path dataDirectory() {
     PWSTR path=nullptr; if(FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData,0,nullptr,&path)))throw std::runtime_error("Local AppData unavailable");
     fs::path result(path);CoTaskMemFree(path);return result/L"ReadyForLaunch";
+}
+fs::path appDirectory() {wchar_t path[32768]{};GetModuleFileNameW(nullptr,path,32768);return fs::path(path).parent_path();}
+std::string sha256(const fs::path& path) {
+    std::ifstream file(path,std::ios::binary);if(!file)throw std::runtime_error("Cannot read update file");
+    BCRYPT_ALG_HANDLE alg=nullptr;BCRYPT_HASH_HANDLE hash=nullptr;
+    if(BCryptOpenAlgorithmProvider(&alg,BCRYPT_SHA256_ALGORITHM,nullptr,0)<0)throw std::runtime_error("SHA256 unavailable");
+    DWORD size=0,count=0;bool ok=BCryptGetProperty(alg,BCRYPT_OBJECT_LENGTH,reinterpret_cast<PUCHAR>(&size),sizeof(size),&count,0)>=0;
+    std::vector<unsigned char> object(size);unsigned char digest[32]{};
+    ok=ok&&BCryptCreateHash(alg,&hash,object.data(),size,nullptr,0,0)>=0;
+    std::array<char,65536> buffer{};
+    while(ok&&file){file.read(buffer.data(),buffer.size());auto bytes=file.gcount();if(bytes)ok=BCryptHashData(hash,reinterpret_cast<PUCHAR>(buffer.data()),ULONG(bytes),0)>=0;}
+    ok=ok&&!file.bad()&&BCryptFinishHash(hash,digest,32,0)>=0;
+    if(hash)BCryptDestroyHash(hash);BCryptCloseAlgorithmProvider(alg,0);
+    if(!ok)throw std::runtime_error("SHA256 verification failed");std::ostringstream output;
+    for(auto byte:digest)output<<std::hex<<std::setfill('0')<<std::setw(2)<<int(byte);return output.str();
 }
 std::wstring quote(const std::wstring& argument) {
     std::wstring result=L"\"";size_t slashes=0;
@@ -87,6 +104,63 @@ static HANDLE existingProcess(const std::string& path) {
         Handle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,pid));
         if(process.h&&WaitForSingleObject(process.h,0)==WAIT_TIMEOUT&&identityPath(processPath(process.h))==target){auto handle=process.h;process.h=nullptr;return handle;}
     }return nullptr;
+}
+bool normalizeLaunchTarget(Task& task) {
+    if(task.source!=Source::Exe)return false;
+    fs::path executable=wide(task.target),version=executable.parent_path();
+    if(version.filename().wstring().rfind(L"app-",0)!=0)return false;
+    auto root=version.parent_path(),launcher=root/L"Update.exe";
+    std::error_code ec;if(!fs::is_regular_file(launcher,ec))return false;
+    auto extra=task.arguments;task.source=Source::Squirrel;task.application=utf8(executable.filename().wstring());
+    task.target=utf8(launcher.wstring());task.directory=utf8(root.wstring());task.probe.clear();
+    task.arguments="--processStart "+utf8(quote(executable.filename().wstring()));
+    if(!extra.empty())task.arguments+=" --process-start-args "+utf8(quote(wide(extra)));return true;
+}
+static void normalizeChoice(AppChoice& app) {
+    Task task;task.source=app.source;task.target=app.target;task.arguments=app.arguments;task.directory=app.directory;
+    if(normalizeLaunchTarget(task)){app.source=task.source;app.target=task.target;app.arguments=task.arguments;app.directory=task.directory;app.application=task.application;app.description="App launcher · "+app.application;}
+}
+static std::unordered_set<DWORD> visiblePids() {
+    std::unordered_set<DWORD> ids;EnumWindows([](HWND window,LPARAM data)->BOOL {
+        if(eligibleWindow(window)){DWORD pid=0;GetWindowThreadProcessId(window,&pid);reinterpret_cast<std::unordered_set<DWORD>*>(data)->insert(pid);}return TRUE;
+    },reinterpret_cast<LPARAM>(&ids));return ids;
+}
+static HANDLE targetProcess(const Task& task) {
+    if(task.source==Source::Exe)return existingProcess(task.target);
+    if(!task.probe.empty()&&task.source!=Source::Squirrel)return existingProcess(task.probe);
+    auto visible=visiblePids();Handle fallback;
+    auto root=task.source==Source::Squirrel?fs::path(wide(task.target)).parent_path().wstring():wide(task.directory);
+    auto prefix=root.empty()?std::wstring{}:identityPath(root)+L"\\";
+    for(auto pid:allPids()) {
+        Handle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,pid));
+        if(!process.h||WaitForSingleObject(process.h,0)!=WAIT_TIMEOUT)continue;
+        bool match=false;
+        if(task.source==Source::Installed)match=appId(pid)==task.target;
+        else {
+            auto path=identityPath(processPath(process.h));
+            if(!prefix.empty()&&path.rfind(prefix,0)==0) {
+                if(task.source==Source::Squirrel)match=_wcsicmp(fs::path(path).filename().c_str(),wide(task.application).c_str())==0;
+                else if(task.source==Source::Steam)match=visible.contains(pid);
+            }
+        }
+        if(!match)continue;
+        if(visible.contains(pid)){auto h=process.h;process.h=nullptr;return h;}
+        if(!fallback.h)fallback=std::move(process);
+    }
+    auto h=fallback.h;fallback.h=nullptr;return h;
+}
+std::unordered_map<std::string,bool> observeApps(const std::vector<Task>& tasks) {
+    std::unordered_map<std::string,bool> result;
+    for(auto task:tasks){normalizeLaunchTarget(task);Handle process(targetProcess(task));result[task.id]=process.h!=nullptr;}return result;
+}
+fs::path targetFolder(const Task& task) {
+    fs::path folder;
+    if(task.source==Source::Exe||task.source==Source::Squirrel)folder=fs::path(wide(task.target)).parent_path();
+    else if(!task.probe.empty())folder=fs::path(wide(task.probe)).parent_path();
+    else if(!task.directory.empty())folder=wide(task.directory);
+    else {Handle process(targetProcess(task));if(process.h)folder=fs::path(processPath(process.h)).parent_path();}
+    if(folder.empty()&&task.source==Source::Steam)for(auto& app:steamApps())if(app.target==task.target){folder=wide(app.directory);break;}
+    std::error_code ec;if(folder.empty()||!fs::is_directory(folder,ec))throw std::runtime_error("The app's target folder is unavailable or no longer exists");return folder;
 }
 static void sortChoices(std::vector<AppChoice>& apps) {
     std::sort(apps.begin(),apps.end(),[](auto& a,auto& b){return _stricmp(a.name.c_str(),b.name.c_str())<0;});
@@ -145,7 +219,7 @@ std::vector<AppChoice> runningApps() {
             auto folder=identityPath(wide(candidate.directory))+L"\\";
             if(path.rfind(folder,0)==0){app.probe=app.target;app.target=candidate.target;app.source=Source::Steam;app.directory=candidate.directory;app.description="Steam · "+candidate.name;app.name=candidate.name;break;}
         }
-    }sortChoices(apps);return apps;
+    }for(auto& app:apps)normalizeChoice(app);sortChoices(apps);return apps;
 }
 std::vector<AppChoice> installedApps() {
     std::vector<AppChoice> apps;ComPtr<IShellItem> folder;
@@ -176,23 +250,32 @@ std::vector<AppChoice> installedApps() {
             wchar_t target[32768]={},args[32768]={};link->GetPath(target,32768,nullptr,SLGP_RAWPATH);link->GetArguments(args,32768);
             // Only direct launch entries; administrative/uninstall links are not offered.
             auto stem=entry.path().stem().wstring(),lower=identityPath(target);
-            if(fs::path(lower).extension()!=L".exe"||*args||lower.find(L"unins")!=std::wstring::npos)continue;
-            AppChoice app;app.name=utf8(stem);app.target=utf8(target);app.directory=utf8(fs::path(target).parent_path().wstring());app.description="Start Menu";apps.push_back(app);
+            if(fs::path(lower).extension()!=L".exe"||lower.find(L"unins")!=std::wstring::npos)continue;
+            AppChoice app;app.name=utf8(stem);app.target=utf8(target);app.directory=utf8(fs::path(target).parent_path().wstring());app.description="Start Menu";
+            if(*args) {
+                int argc=0;auto parsed=CommandLineToArgvW((std::wstring(L"launcher ")+args).c_str(),&argc);
+                if(parsed&&argc==3&&_wcsicmp(fs::path(target).filename().c_str(),L"Update.exe")==0&&std::wstring(parsed[1])==L"--processStart"&&fs::path(parsed[2]).filename()==fs::path(parsed[2])&&fs::path(parsed[2]).extension()==L".exe") {
+                    app.source=Source::Squirrel;app.application=utf8(parsed[2]);app.arguments=utf8(args);app.description="App launcher";
+                }else {if(parsed)LocalFree(parsed);continue;}
+                LocalFree(parsed);
+            }
+            normalizeChoice(app);apps.push_back(app);
         }
-    }sortChoices(apps);return apps;
+    }for(auto& app:apps)normalizeChoice(app);sortChoices(apps);return apps;
 }
 struct WindowsBackend::Impl {
-    struct Record {Task task;Handle process,job;bool managed=false,reused=false;};
+    struct Record {Task task;Handle process,launcher,job;bool managed=false,reused=false;};
     std::vector<Record> records;
 };
 WindowsBackend::WindowsBackend():impl_(std::make_unique<Impl>()){}
 WindowsBackend::~WindowsBackend()=default;
-Launch WindowsBackend::start(const Task& task) {
+Launch WindowsBackend::start(const Task& original) {
+    Task task=original;normalizeLaunchTarget(task);
     Impl::Record record;record.task=task;Launch result;
-    if(task.source==Source::Exe) {
+    if(task.source==Source::Exe||task.source==Source::Squirrel) {
         auto path=wide(task.target);
         if(!fs::exists(path))return {-1,false,false,"Executable not found. Edit the app to choose its location."};
-        record.process=Handle(existingProcess(task.target));
+        record.process=Handle(targetProcess(task));
         if(record.process.h){record.reused=true;}
         else {
             record.job=Handle(CreateJobObjectW(nullptr,nullptr));if(!record.job.h)return {-1,false,false,systemError()};
@@ -204,9 +287,10 @@ Launch WindowsBackend::start(const Task& task) {
             if(!AssignProcessToJobObject(record.job.h,record.process.h)){auto error=systemError();TerminateProcess(record.process.h,1);return {-1,false,false,"Cannot track process safely: "+error};}
             if(ResumeThread(thread.h)==DWORD(-1)){auto error=systemError();TerminateJobObject(record.job.h,1);return {-1,false,false,error};}
             record.managed=true;
+            if(task.source==Source::Squirrel)record.launcher=std::move(record.process);
         }
     } else if(task.source==Source::Steam) {
-        record.process=Handle(existingProcess(task.probe));
+        record.process=Handle(targetProcess(task));
         if(record.process.h)record.reused=true;
         else {
             if(task.target.empty()||task.target.find_first_not_of("0123456789")!=std::string::npos)return {-1,false,false,"Invalid Steam App ID"};
@@ -216,7 +300,7 @@ Launch WindowsBackend::start(const Task& task) {
         }
     } else {
         // AUMID activation returns the actual instance. Brokered instances are observed, never force-owned.
-        record.process=Handle(existingProcess(task.probe));
+        record.process=Handle(targetProcess(task));
         if(record.process.h)record.reused=true;
         else {
             ComPtr<IApplicationActivationManager> manager;
@@ -231,8 +315,11 @@ Launch WindowsBackend::start(const Task& task) {
 }
 Observation WindowsBackend::poll(int ticket) {
     auto& record=impl_->records.at(ticket);
-    if(!record.process.h&&!record.task.probe.empty())record.process=Handle(existingProcess(record.task.probe));
-    if(!record.process.h)return {};
+    if(!record.process.h&&record.task.source!=Source::Exe)record.process=Handle(targetProcess(record.task));
+    if(!record.process.h) {
+        if(record.launcher.h&&WaitForSingleObject(record.launcher.h,0)==WAIT_OBJECT_0){DWORD code=0;GetExitCodeProcess(record.launcher.h,&code);if(code)return {true,false,false,true,int(code)};}
+        return {};
+    }
     Observation state;state.known=true;state.alive=WaitForSingleObject(record.process.h,0)==WAIT_TIMEOUT;
     if(!state.alive){DWORD exitCode=0;GetExitCodeProcess(record.process.h,&exitCode);state.exited=true;state.exitCode=int(exitCode);return state;}
     struct WindowCheck {DWORD pid;bool found=false;} check{GetProcessId(record.process.h)};
@@ -245,7 +332,7 @@ bool WindowsBackend::ownedAlive(int ticket) {
     return r.process.h&&WaitForSingleObject(r.process.h,0)==WAIT_TIMEOUT;
 }
 std::string WindowsBackend::close(int ticket,bool force) {
-    auto& r=impl_->records.at(ticket);if(!r.managed)return "This app was not directly launched by this session";
+    auto& r=impl_->records.at(ticket);if(force&&!r.managed)return "This app was not directly launched by this session";
     if(force){if(r.job.h?TerminateJobObject(r.job.h,1):TerminateProcess(r.process.h,1))return {};return systemError();}
     std::unordered_set<DWORD> pids;
     if(r.job.h) {
@@ -256,6 +343,6 @@ std::string WindowsBackend::close(int ticket,bool force) {
     if(r.process.h)pids.insert(GetProcessId(r.process.h));
     struct Context {const std::unordered_set<DWORD>* pids;int sent=0;} context{&pids};
     EnumWindows([](HWND window,LPARAM p)->BOOL {auto& c=*reinterpret_cast<Context*>(p);DWORD pid=0;GetWindowThreadProcessId(window,&pid);if(c.pids->contains(pid)&&PostMessageW(window,WM_CLOSE,0,0))++c.sent;return TRUE;},reinterpret_cast<LPARAM>(&context));
-    return context.sent?std::string{}:"No closeable window; use the app's Exit or Emergency stop";
+    return context.sent?std::string{}:"No closeable window; use the app's Exit or Windows Task Manager";
 }
 }

@@ -7,11 +7,11 @@
 
 namespace rfl {
 using Json = nlohmann::json;
-enum class Source { Exe, Steam, Installed };
-enum class Timing { Together, Started, Delay, Finished };
+enum class Source { Exe, Steam, Installed, Squirrel };
+enum class Timing { Together, Started, Delay, Finished, Go };
 enum class Readiness { Process, Window, Completion, Manual };
 struct Task {
-    std::string id, name, target, arguments, directory, probe;
+    std::string id, name, target, arguments, directory, probe, application;
     Source source = Source::Exe;
     Timing timing = Timing::Started;
     Readiness readiness = Readiness::Process;
@@ -34,6 +34,7 @@ struct Settings {
 std::string newId();
 Settings defaults();
 Profile duplicate(const Profile& p, std::string name);
+void copyConfiguration(Profile& destination,const Profile& source);
 std::vector<std::string> validate(const Profile& p);
 bool canFollow(const Profile& p, const std::string& group, const std::string& predecessor);
 Json serialize(const Settings& s);

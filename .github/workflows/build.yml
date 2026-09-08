@@ -1,4 +1,4 @@
-name: Windows preview build
+name: Windows alpha build
 on:
   push:
   pull_request:
@@ -26,5 +26,6 @@ jobs:
         with:
           name: ReadyForLaunch-win-x64
           path: |
+            dist/*-Setup.exe
             dist/*.zip
             dist/SHA256SUMS.txt
