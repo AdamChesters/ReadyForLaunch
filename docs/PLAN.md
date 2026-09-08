@@ -4,7 +4,7 @@
 
 **Date:** 8 September 2026
 
-**Stage:** proposed MVP; no application implementation yet
+**Stage:** design baseline and roadmap. The 0.1.0 preview implements the core launcher; see [USER-GUIDE.md](USER-GUIDE.md) and [TESTING.md](TESTING.md) for actual behaviour and remaining validation.
 
 ## 1. Product
 
@@ -29,10 +29,11 @@ Rows support drag-and-drop within or between groups, with Move up/down in the me
 
 ## 3. Adding an app
 
-**+ Add app** opens one small dialog with three tabs. The global button asks which group to use; a group-specific button preselects that group.
+**+ Add app** opens one small dialog with four tabs. **Running apps is the primary/default picker**, as requested during the first build: show visible application windows, grouped by app, excluding services, tray-only utilities, hidden helpers, and tool windows. The global button adds to the last group in this preview; a group-specific button preselects that group.
 
 | Method | Normal interaction | Implementation approach |
 | --- | --- | --- |
+| Running apps (default) | Select an app from its visible window | Save its executable or packaged-app identity; recognise Steam apps inside discovered libraries. Exclude non-application/background windows and deduplicate entries. |
 | Browse EXE | Pick an executable; name fills automatically | Native Windows file picker; store the path. Expand Details for arguments and working directory. |
 | Steam | Search installed Steam games and tools by name | Discover Steam libraries and local app manifests; save the App ID. Ask Steam to launch it, without needing the game's EXE path. Offer manual App ID or pasted Steam store URL as a fallback. |
 | Installed apps | Search the current user's Windows app list | Enumerate AppsFolder and Start Menu launch entries; resolve ordinary shortcuts and packaged-app identities. |
@@ -149,7 +150,7 @@ Deliver Windows x64 first as a portable ZIP; add a per-user installer after beha
 | 3. Session engine | Parallel and sequential groups, gates, delays, cancellation, retry, Stop and Emergency stop | Deterministic tests with controllable helper processes verify ordering, simultaneous release, a three-group linear chain, two groups sharing a predecessor, waiting for all parallel members, and dependency retention when the first task changes. Also verify cycle rejection, upstream failure blocking, timeouts, reverse shutdown, cancellation races, and protection of pre-existing apps. |
 | 4. Real-stack preview | DCS/VR walkthrough, one non-VR profile, packaged-app coverage, portable build | Test real launches with Steam open and closed, an update/login interruption, a refusing-to-close tray app, an exited/reused PID, and permission failures. Document observed compatibility before release. |
 
-The first version is ready when a user can assemble a profile using all three sources, run at least three independent chains, see exactly which dependency is waiting, and stop the owned apps without touching a pre-existing app. Any brokered app lacking reliable ownership must be visibly identified as launch-only. Runtime validation remains future work; none of these application tests has been run for this planning deliverable.
+The first version is ready when a user can assemble a profile using the default Running apps picker and the three alternate sources, run at least three independent chains, see exactly which dependency is waiting, and stop the owned apps without touching a pre-existing app. Any brokered app lacking reliable ownership must be visibly identified as launch-only. Automated scheduler/process tests now run in the first build; real flight sim and headset validation remains for the user's first test cycle. See [TESTING.md](TESTING.md).
 
 ## 10. V2 — remember and restore window state
 

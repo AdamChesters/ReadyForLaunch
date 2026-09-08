@@ -71,9 +71,11 @@ The [PSVR2SimShaker setup guide](https://github.com/AdamChesters/PSVR2SimShaker/
 
 Microsoft's [CloseMainWindow documentation](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.closemainwindow?view=net-10.0) explains that a close request does not force an app to exit; it may refuse or request user input. The native implementation should make this same distinction between graceful Stop and forced Emergency stop. Tracking actual session-owned processes is the core release requirement.
 
-## Scope of this delivery
+## Original planning milestone (8 September 2026)
 
 - Name searches completed and UI source inspected.
 - JPG mockup generated and converted to a real JPEG; layout and text visually reviewed.
 - Plan records the MVP and Adam's v2 window-state requirement.
-- Repository contains documentation and the concept image only. Launch methods, timing behaviour, and process shutdown have not yet been implemented or runtime-tested.
+- At that milestone the repository contained documentation and the concept image only.
+
+The 0.1.0 preview subsequently implemented the launcher. Current behaviour and runtime verification are recorded in [USER-GUIDE.md](USER-GUIDE.md) and [TESTING.md](TESTING.md). The research above remains the dated evidence for the original design decisions.
