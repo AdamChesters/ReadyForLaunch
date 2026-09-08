@@ -47,7 +47,8 @@ Use a **single timing selector per row** rather than three independent timing ch
 
 | Timing | Meaning |
 | --- | --- |
-| On GO | The first app starts when its group's gate opens. |
+| On GO | The first enabled app starts when GO is pressed; this is the default group start rule. |
+| After group… | Available on the first enabled task: select a named group and wait for that entire group's startup sequence to succeed before this group can start. |
 | With previous | Share the previous app's launch gate, so both launch without waiting for either to start. |
 | After previous starts | Wait until the preceding app satisfies its configured started condition. |
 | X seconds after previous | Start the timer when the preceding launch request is successfully dispatched, or an existing instance is accepted; dispatch this app after X seconds. This alone does not prove readiness. |
@@ -55,7 +56,13 @@ Use a **single timing selector per row** rather than three independent timing ch
 
 Details also permit a short **settle delay after detection**, useful when an app needs a little more time after its process appears. This is distinct from the fixed delay measured from launch dispatch.
 
-Every group starts on GO by default. A small group setting can instead wait for another named app or group; a group becomes ready when every enabled member has reached its required startup/completion condition. These references use stable IDs. Reject cycles and unresolved dependencies before starting. The UI never exposes a graph editor.
+Every group starts on GO by default. Its **first enabled task's timing selector** explicitly offers **After group…**, followed by a dropdown of named groups in the profile. After selection, show **After group: VR & haptics**, for example, and mirror it in the group header. This supports a fully linear sequence of groups as well as independent groups and branches. A group can still wait for a named app through Details.
+
+Store this start rule on the group and display/edit it through the first enabled task. Reordering, moving, disabling, or deleting that first task must not lose the group dependency: the next first enabled task displays the same rule. **Every task in the group**, including tasks using With previous, must wait for the group gate to open.
+
+A referenced group becomes ready only when **every enabled member** has satisfied its configured startup/completion condition, including parallel members and settle delays. Ordinary apps remain running; this does not wait for them to close. One-shot helpers must finish successfully. A failed, timed-out, or cancelled upstream sequence keeps dependent groups blocked; unrelated groups can continue.
+
+References use stable group/app IDs so renaming is safe. Exclude the current group and any choice that would form a cycle from the picker, and validate cycles and unresolved dependencies again before GO. Empty or fully disabled dependency groups are invalid rather than automatically successful. The UI never exposes a graph editor.
 
 **Example stack:**
 
@@ -70,7 +77,17 @@ VR & haptics ready ── Simulator: DCS World
 
 The VR and tools groups execute independently. The simulator waits only for the VR group in this example. Three or more independent groups work the same way.
 
-Ordinary adjacent-row rules follow the nearest preceding enabled row. If none exists, use the group's gate and show **On GO**. Explicit dependencies on a disabled app or empty group are configuration errors that require fixing; they must not silently disappear. Show the resulting rule immediately when rows move or are disabled. A failed app blocks its dependants while unrelated groups continue; present **Retry** on the failed row. No automatic restart loops in the MVP.
+**Fully linear alternative, configured through the first task in each group:**
+
+| Group | First task's timing |
+| --- | --- |
+| VR & haptics | On GO |
+| Flight tools | After group: VR & haptics |
+| Simulator | After group: Flight tools |
+
+This runs **VR & haptics → Flight tools → Simulator**. Selecting the same predecessor for two groups starts both after that predecessor becomes ready, while each retains its own internal sequence.
+
+Ordinary adjacent-row rules follow the nearest preceding enabled row. If none exists, display the group's actual start rule: **On GO**, **After group: [name]**, or its named-app gate. Never replace an explicit group dependency with On GO when the first row changes. Explicit dependencies on a disabled app or empty group are configuration errors that require fixing; they must not silently disappear. Show the resulting rule immediately when rows move or are disabled. A failed app blocks its dependants while unrelated groups continue; present **Retry** on the failed row. No automatic restart loops in the MVP.
 
 ## 5. What “started” means
 
@@ -129,7 +146,7 @@ Deliver Windows x64 first as a portable ZIP; add a per-user installer after beha
 | --- | --- | --- |
 | 1. Prove launch and ownership | Minimal adapters for EXE, Steam, and one packaged/Start Menu app; session tracking spike | Launch succeeds without knowing a Steam game's EXE; identify actual targets, already-running cases, and ownership limits. Validate VR2JB success and SteamVR readiness options. |
 | 2. Compact editor and profiles | Native window, source picker, rows, groups, reorder, timing, starter/custom profiles | Save and reopen settings; handle missing paths, duplicates, disabled dependencies, and cycles; inspect keyboard navigation and 100/150/200% scaling. |
-| 3. Session engine | Parallel groups, gates, delays, cancellation, retry, Stop and Emergency stop | Deterministic tests with controllable helper processes verify ordering, simultaneous release, timeouts, reverse shutdown, cancellation races, and protection of pre-existing apps. |
+| 3. Session engine | Parallel and sequential groups, gates, delays, cancellation, retry, Stop and Emergency stop | Deterministic tests with controllable helper processes verify ordering, simultaneous release, a three-group linear chain, two groups sharing a predecessor, waiting for all parallel members, and dependency retention when the first task changes. Also verify cycle rejection, upstream failure blocking, timeouts, reverse shutdown, cancellation races, and protection of pre-existing apps. |
 | 4. Real-stack preview | DCS/VR walkthrough, one non-VR profile, packaged-app coverage, portable build | Test real launches with Steam open and closed, an update/login interruption, a refusing-to-close tray app, an exited/reused PID, and permission failures. Document observed compatibility before release. |
 
 The first version is ready when a user can assemble a profile using all three sources, run at least three independent chains, see exactly which dependency is waiting, and stop the owned apps without touching a pre-existing app. Any brokered app lacking reliable ownership must be visibly identified as launch-only. Runtime validation remains future work; none of these application tests has been run for this planning deliverable.

@@ -12,6 +12,7 @@ Choose a simulator profile, arrange your companion apps, and press **GO**. Indep
 
 - Add apps by browsing to an EXE, selecting a Steam app, or choosing from Windows' app list.
 - Reorder and enable individual apps; organise them into parallel launch groups.
+- Set a group's first task to **After group…** to chain whole groups in order, such as VR → Flight tools → Simulator.
 - Start with the previous app, after it starts, or after a chosen delay. Support successful completion for one-shot helpers such as VR2JB.
 - Simulator profile buttons for DCS World, MSFS 2024, MSFS 2020, X-Plane 12, and IL-2; custom profiles in a dropdown.
 - **GO**, graceful **Stop**, and **Emergency stop** for processes tracked as belonging to the current session.
