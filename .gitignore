@@ -1,0 +1,23 @@
+# Build and editor output
+/build/
+/out/
+/.vs/
+/.idea/
+*.user
+*.suo
+
+# Local configuration and runtime data
+/local/
+/profiles/
+/logs/
+/sessions/
+*.log
+*.dmp
+.env
+.env.*
+!.env.example
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store
