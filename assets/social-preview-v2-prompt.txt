@@ -1,0 +1,10 @@
+Use case: style-transfer / ads-marketing.
+Edit the ReadyForLaunch social preview (image 2), using image 1 solely as a typography, composition, and restrained rendering style reference. Output a wide 2:1 opaque social preview image, ideally 1280x640.
+Keep the ReadyForLaunch white R/cyan arrow app icon, the perspective runway lines, and the three app tiles connecting to the cyan GO button from image 2. The user likes this background concept. Do not add the fighter jet or the S logo from image 1.
+Match image 1 much more closely: nearly black background instead of blue haze; flatter, crisp dark navy illustration with thin cyan edges; very little glow. Icon smaller in the top left, huge elegant bold WHITE serif title in the left middle, cyan bold serif tagline below, subdued small gray author byline near bottom left. Runway and app-to-GO illustration occupy the right side and lower background, leaving clear negative space behind all lettering. Right-side graphic can be larger/more detailed, matching the restrained technical illustration aesthetic of the reference.
+Exact title: "ReadyForLaunch"
+Exact tagline, preserve all words and lowercase beginning: "launch all the apps you need at once, how you need to launch them"
+Set tagline across 3 or 4 balanced lines so it remains legible, in cyan serif. Do not abbreviate or substitute words.
+Other text only: "by Adam Chesters", a small understated "ALPHA" badge, and "GO" on the graphic's button.
+Remove the previous 'Intended for flight sims, usable for anything' text entirely.
+Maintain 60px-equivalent safe margins, strong readable hierarchy and reference image 1's mature, clean brand style. No extra text, aircraft, PSVR2 branding, or watermarks.
