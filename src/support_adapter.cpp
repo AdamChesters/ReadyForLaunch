@@ -11,7 +11,7 @@ void Ui::draw_support_panel(){
     identity.appLogo=[this] {
         if(!supportLogo_.view){try{supportLogo_=loadLogoImage(device_);}catch(const std::exception& error){ImGui::TextWrapped("%s",error.what());}}
         if(supportLogo_.view){
-            const float width=140.f*ImGui::GetStyle().FontScaleDpi;
+            const float width=100.f*ImGui::GetStyle().FontScaleDpi;
             const float height=width*float(supportLogo_.height)/float(std::max(supportLogo_.width,1u));
             ImGui::SetCursorPosX(ImGui::GetCursorPosX()+(ImGui::GetContentRegionAvail().x-width)*.5f);
             ImGui::Image(reinterpret_cast<ImTextureID>(supportLogo_.view.Get()),ImVec2(width,height));
