@@ -404,7 +404,7 @@ void Ui::render() {
     ImGui::SameLine();ImGui::SetCursorPosY(ImGui::GetCursorPosY()+px(14));ImGui::TextColored(muted,"by Adam Chesters");
     right(285);updateControls();
     ImGui::TextColored(muted,"Intended for flight sims, usable for anything");
-    right(365);if(ImGui::Button("Feedback / Donate",uiSize(150,30))){support_panel_.open();}ImGui::SameLine();
+    right(385);if(ImGui::Button("Feedback / Donate",uiSize(170,30))){support_panel_.open();}ImGui::SameLine();
     if(ImGui::Button("Help",uiSize(90,30))){helpOpen_=true;ImGui::OpenPopup("Help");}ImGui::SameLine();
     if(ImGui::Button("Settings",uiSize(105,30))){settingsOpen_=true;ImGui::OpenPopup("Settings");}
     bool active=engine_.active();
