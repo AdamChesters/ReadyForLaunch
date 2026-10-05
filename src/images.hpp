@@ -7,4 +7,5 @@ struct Texture {
     unsigned width=0,height=0;
 };
 Texture loadHelpImage(ID3D11Device* device);
+Texture loadLogoImage(ID3D11Device* device);
 }

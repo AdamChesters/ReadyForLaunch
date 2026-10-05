@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-alpha.2 - 5 October 2026
+
+- Added a prominent Feedback / Donate button with ReadyForLaunch artwork and support information.
+- Added Discord, donation and project links, with access to the existing updater.
+- Added feedback submission identifying ReadyForLaunch and the app version, without logs.
+
+
 ## 0.2.0-alpha.1 — 9 September 2026
 
 - Add Help with the approved mockup, a scrollable Status window, and live app status lights.

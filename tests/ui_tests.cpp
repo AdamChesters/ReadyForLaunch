@@ -8,6 +8,8 @@ using namespace rfl;
 namespace rfl {
 struct UiTestAccess {
     static Settings& settings(Ui& ui){return ui.settings_;}
+    static bool logoLoaded(Ui& ui){return ui.supportLogo_.view.Get()!=nullptr;}
+    static const std::string& feedbackError(Ui& ui){return ui.feedback_error_;}
     static void renameText(Ui& ui){ui.actionName_="Renamed tab";}
 };
 }
@@ -42,8 +44,21 @@ int main() {
             auto customFirst=hover(x,y),customSecond=hover(x,y+26);
             check(customFirst&&customSecond&&customFirst!=customSecond,"same-named custom profiles have distinct interactive IDs");
             click(0);check(settings.selected==secondCustom,"click selects the second same-named profile independently");
+            ui.captureView("support");frame();frame();
+            auto support=ImGui::FindWindowByName("Feedback / Donate##support");
+            check(support&&support->Active,"support dialog opens");
+            check(UiTestAccess::logoLoaded(ui),"support dialog loads the actual app logo");
+            ImGui::ActivateItemByID(support->GetID("Close"));frame();frame();
+            check(!support->Active,"support dialog closes");
+            ui.captureView("feedback");frame();frame();
+            auto feedback=ImGui::FindWindowByName("Feedback / feature request##feedback");
+            check(feedback&&feedback->Active,"feedback form opens");
+            ImGui::ActivateItemByID(feedback->GetID("Send feedback"));frame();frame();
+            check(UiTestAccess::feedbackError(ui)=="Enter a name, up to 100 characters.","empty feedback is rejected without networking");
+            ImGui::ActivateItemByID(feedback->GetID("Close"));frame();frame();
+            check(!feedback->Active,"feedback form closes");
         }
         ImGui_ImplDX11_Shutdown();ImGui::DestroyContext();CoUninitialize();
-        std::cout<<"PASS: actual UI hover IDs, duplicate profile names, right-click Rename, and independent dropdown selection\n";return 0;
+        std::cout<<"PASS: actual UI hover IDs, duplicate profile names, right-click Rename, and independent dropdown selection, support logo/dialog and feedback validation\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';CoUninitialize();return 1;}
 }
