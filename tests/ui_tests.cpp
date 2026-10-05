@@ -9,7 +9,7 @@ namespace rfl {
 struct UiTestAccess {
     static Settings& settings(Ui& ui){return ui.settings_;}
     static bool logoLoaded(Ui& ui){return ui.supportLogo_.view.Get()!=nullptr;}
-    static const std::string& feedbackError(Ui& ui){return ui.feedback_error_;}
+    static const std::string& feedbackError(Ui& ui){return ui.support_panel_.feedbackError();}
     static void renameText(Ui& ui){ui.actionName_="Renamed tab";}
 };
 }

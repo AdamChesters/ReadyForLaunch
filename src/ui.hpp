@@ -2,7 +2,7 @@
 #include "windows.hpp"
 #include "updates.hpp"
 #include "images.hpp"
-#include "feedback_sender.h"
+#include "support_panel.h"
 #include <future>
 #include <unordered_set>
 
@@ -12,10 +12,7 @@ class Ui {
     HWND window_;std::filesystem::path directory_;
     Settings settings_;WindowsBackend backend_;Engine engine_{backend_};
     UpdateClient updates_;ID3D11Device* device_;Texture helpImage_,supportLogo_;
-    FeedbackSender feedback_sender_;
-    bool supportOpen_=false,open_feedback_=false,feedback_sent_seen_=false,supportUpdateRequested_=false;
-    char feedback_name_[401]{},feedback_email_[1017]{},feedback_message_[16001]{};
-    std::string feedback_error_;
+    adamch_support::SupportPanel support_panel_;
     std::string message_,activeProfile_;
     std::future<std::vector<AppChoice>> discovery_;
     std::vector<AppChoice> choices_;
@@ -42,7 +39,7 @@ class Ui {
     void note(const std::string& text,bool alert=false);
     void profileContext(Profile& profile);void profileActionDialog();
     void helpWindow();void statusWindow();void updateControls();
-    void draw_support_dialog();void draw_feedback_dialog();
+    void draw_support_panel();
     Profile* profileById(const std::string& id);
     void beginSession();
 public:

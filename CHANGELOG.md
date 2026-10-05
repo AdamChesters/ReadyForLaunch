@@ -4,6 +4,7 @@
 
 - Added a prominent Feedback / Donate button with ReadyForLaunch artwork and support information.
 - Added Discord, donation and project links, with access to the existing updater.
+- Standardized the bundled support panel and donation links in `/donate` and the README.
 - Added feedback submission identifying ReadyForLaunch and the app version, without logs.
 
 

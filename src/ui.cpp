@@ -404,7 +404,7 @@ void Ui::render() {
     ImGui::SameLine();ImGui::SetCursorPosY(ImGui::GetCursorPosY()+px(14));ImGui::TextColored(muted,"by Adam Chesters");
     right(285);updateControls();
     ImGui::TextColored(muted,"Intended for flight sims, usable for anything");
-    right(365);if(ImGui::Button("Feedback / Donate",uiSize(150,30))){supportOpen_=true;ImGui::OpenPopup("Feedback / Donate##support");}ImGui::SameLine();
+    right(365);if(ImGui::Button("Feedback / Donate",uiSize(150,30))){support_panel_.open();}ImGui::SameLine();
     if(ImGui::Button("Help",uiSize(90,30))){helpOpen_=true;ImGui::OpenPopup("Help");}ImGui::SameLine();
     if(ImGui::Button("Settings",uiSize(105,30))){settingsOpen_=true;ImGui::OpenPopup("Settings");}
     bool active=engine_.active();
@@ -471,8 +471,8 @@ void Ui::render() {
         if(captureView_=="group"){groupOpen_=true;groupName_="New group";groupId_.clear();ImGui::OpenPopup("Group");}
         if(captureView_=="help"){helpOpen_=true;ImGui::OpenPopup("Help");}
         if(captureView_=="status"){statusOpen_=true;for(int i=0;i<18;++i)note("Warning: Example app "+std::to_string(i+1)+" is already running. Skipped starting another instance.");}
-        if(captureView_=="support"){supportOpen_=true;ImGui::OpenPopup("Feedback / Donate##support");}
-        if(captureView_=="feedback"){open_feedback_=true;}
+        if(captureView_=="support"){support_panel_.open();}
+        if(captureView_=="feedback"){support_panel_.openFeedback();}
         if(captureView_=="updates"){updateOpen_=true;ImGui::OpenPopup("Updates");}
         captureView_.clear();
     }
@@ -493,10 +493,7 @@ void Ui::render() {
     if(profileOpen_&&!ImGui::IsPopupOpen("Profile"))ImGui::OpenPopup("Profile");
     if(editOpen_&&!ImGui::IsPopupOpen("App details"))ImGui::OpenPopup("App details");
     profileActionDialog();helpWindow();
-    draw_support_dialog();
-    if(open_feedback_){ImGui::OpenPopup("Feedback / feature request##feedback");open_feedback_=false;}
-    draw_feedback_dialog();
-    if(supportUpdateRequested_){updateOpen_=true;ImGui::OpenPopup("Updates");supportUpdateRequested_=false;}
+    draw_support_panel();
     if(dirty_)save();ImGui::End();statusWindow();
 }
 }
