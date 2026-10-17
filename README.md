@@ -8,11 +8,11 @@
 
 By **Adam Chesters ([AdamChesters](https://github.com/AdamChesters))**.
 
-> **ALPHA — 0.2.0-alpha.1 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
+> **ALPHA — 0.2.0-alpha.3 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
 
 Choose a profile, arrange your apps, and press **GO**. Independent groups start together; each follows its own sequence. A group can also wait for another group.
 
-[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.1) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
+[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.3) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
 
 Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLaunch.exe`. Starter profiles are empty until you add your apps. The top-right version indicator checks GitHub Releases and offers verified updates.
 
@@ -59,8 +59,10 @@ Packaging needs Inno Setup 6.3+; use `-SkipInstaller` for only a portable ZIP. W
 Licensed under **GPL-3.0**. The updater is adapted from [PSVR2SimShaker](https://github.com/AdamChesters/PSVR2SimShaker); see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 
-## Feedback and donations
+## Feedback and support
 
-I love making things. Anything I've ever built has been to have fun, share fun, and make life a bit easier. If you got value from one of these things, and you'd like to chuck us a coffee, a bottle, or a god damned Ferrari, go your hardest. Then hustle over to discord to claim your supporter role!
+I love making things to have fun, share fun, and make life a lil better. If you got value out of one of them, feel free to buy us a coffee. Or a house. Push comes to shove, I prefer Aston Martin. Supporters get golden crowns on the Discord / tags on the subreddit!
 
-[GitHub Sponsors](https://github.com/sponsors/AdamChesters) | [Buy Me a Coffee](https://buymeacoffee.com/adamch) | [Donate with PayPal](https://www.paypal.com/donate/?business=KLHSZPXTSVSAU&no_recurring=0&item_name=I%27ve+donated+to+lots+of+small+creators+for+their+useful+little+tools%2C+now+I+create+them.+Dig+one?+I%27d+love+your+support.&currency_code=AUD) | [Join the Discord](https://discord.gg/fs4WyaQPA)
+[GitHub Sponsors](https://github.com/sponsors/AdamChesters) | [Buy Me a Coffee](https://buymeacoffee.com/adamch) | [Support with PayPal](https://www.paypal.com/donate/?business=KLHSZPXTSVSAU&no_recurring=0&item_name=I%27ve+donated+to+lots+of+small+creators+for+their+useful+little+tools%2C+now+I+create+them.+Dig+one?+I%27d+love+your+support.&currency_code=AUD)
+
+[Discord](https://discord.gg/fs4WyaQPA) | [Reddit](https://www.reddit.com/r/AdamChsLab/) | [GitHub](https://github.com/AdamChesters) | [LinkedIn](https://www.linkedin.com/in/adamchesters/) | [AdamCh.com](https://adamch.com)

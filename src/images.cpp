@@ -22,4 +22,10 @@ static Texture loadResourceImage(ID3D11Device* device,int id) {
 }
 Texture loadHelpImage(ID3D11Device* device){return loadResourceImage(device,201);}
 Texture loadLogoImage(ID3D11Device* device){return loadResourceImage(device,202);}
+Texture loadSocialImage(ID3D11Device* device,const std::string& icon) {
+    // Support content names each SVG logo; the executable embeds its PNG copy.
+    static const std::pair<const char*,int> ids[]={{"assets/discord.svg",203},{"assets/reddit.svg",204},{"assets/github-mark.svg",205},{"assets/linkedin.svg",206},{"assets/website.svg",207}};
+    for(auto& [path,id]:ids)if(icon==path)return loadResourceImage(device,id);
+    throw std::runtime_error("Social logo is unavailable");
+}
 }

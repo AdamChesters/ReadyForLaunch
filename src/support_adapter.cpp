@@ -17,6 +17,12 @@ void Ui::draw_support_panel(){
             ImGui::Image(reinterpret_cast<ImTextureID>(supportLogo_.view.Get()),ImVec2(width,height));
         }
     };
+    identity.socialIcon=[this](const char* icon)->void* {
+        // A missing logo is tried once; the shared panel then shows the label instead.
+        auto found=socialIcons_.find(icon);
+        if(found==socialIcons_.end()){Texture texture;try{texture=loadSocialImage(device_,icon);}catch(const std::exception&){}found=socialIcons_.emplace(icon,texture).first;}
+        return found->second.view.Get();
+    };
     identity.checkForUpdates=[this]{
         const auto state=updates_.status().state;
         if(state!=UpdateState::Checking&&state!=UpdateState::Downloading&&state!=UpdateState::Available&&state!=UpdateState::Ready)updates_.check();

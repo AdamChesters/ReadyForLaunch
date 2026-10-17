@@ -9,6 +9,7 @@ namespace rfl {
 struct UiTestAccess {
     static Settings& settings(Ui& ui){return ui.settings_;}
     static bool logoLoaded(Ui& ui){return ui.supportLogo_.view.Get()!=nullptr;}
+    static bool socialLogosLoaded(Ui& ui){if(ui.socialIcons_.size()!=std::size(adamch_support::content::socials))return false;for(auto& [icon,texture]:ui.socialIcons_)if(!texture.view)return false;return true;}
     static const std::string& feedbackError(Ui& ui){return ui.support_panel_.feedbackError();}
     static void renameText(Ui& ui){ui.actionName_="Renamed tab";}
 };
@@ -45,9 +46,10 @@ int main() {
             check(customFirst&&customSecond&&customFirst!=customSecond,"same-named custom profiles have distinct interactive IDs");
             click(0);check(settings.selected==secondCustom,"click selects the second same-named profile independently");
             ui.captureView("support");frame();frame();
-            auto support=ImGui::FindWindowByName("Feedback / Donate##support");
+            auto support=ImGui::FindWindowByName((std::string(adamch_support::content::title)+"##support").c_str());
             check(support&&support->Active,"support dialog opens");
             check(UiTestAccess::logoLoaded(ui),"support dialog loads the actual app logo");
+            check(UiTestAccess::socialLogosLoaded(ui),"support dialog loads every embedded social logo");
             ImGui::ActivateItemByID(support->GetID("Close"));frame();frame();
             check(!support->Active,"support dialog closes");
             ui.captureView("feedback");frame();frame();
@@ -59,6 +61,6 @@ int main() {
             check(!feedback->Active,"feedback form closes");
         }
         ImGui_ImplDX11_Shutdown();ImGui::DestroyContext();CoUninitialize();
-        std::cout<<"PASS: actual UI hover IDs, duplicate profile names, right-click Rename, and independent dropdown selection, support logo/dialog and feedback validation\n";return 0;
+        std::cout<<"PASS: actual UI hover IDs, duplicate profile names, right-click Rename, and independent dropdown selection, support logo/social logos/dialog and feedback validation\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';CoUninitialize();return 1;}
 }

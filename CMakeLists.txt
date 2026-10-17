@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(ReadyForLaunch VERSION 0.2.0 LANGUAGES CXX RC)
-set(RFL_VERSION "0.2.0-alpha.2")
+set(RFL_VERSION "0.2.0-alpha.3")
 configure_file(src/version.hpp.in generated/version.hpp @ONLY)
 configure_file(src/resources.rc.in generated/resources.rc @ONLY)
 if(NOT WIN32)

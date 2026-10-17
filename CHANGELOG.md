@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0-alpha.3 - 17 October 2026
+
+- A failed app no longer holds up the launch sequence. Its row shows Failed, Status says what happened, and later apps launch as scheduled.
+- Fixed a delayed app staying "Blocked" when the previous app started and then exited. Delays now count from the previous launch attempt.
+- Fixed a dependent group waiting forever on an app that started and then exited normally.
+- Updated Feedback / Support to the shared support component 2.0.0: Support wording, a row of Discord, Reddit, GitHub, LinkedIn and AdamCh.com buttons, and the Feedback form beside Check for updates.
+- Updated the README support section to match.
+
 ## 0.2.0-alpha.2 - 5 October 2026
 
 - Added a prominent Feedback / Donate button with ReadyForLaunch artwork and support information.

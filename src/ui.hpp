@@ -12,6 +12,7 @@ class Ui {
     HWND window_;std::filesystem::path directory_;
     Settings settings_;WindowsBackend backend_;Engine engine_{backend_};
     UpdateClient updates_;ID3D11Device* device_;Texture helpImage_,supportLogo_;
+    std::unordered_map<std::string,Texture> socialIcons_;
     adamch_support::SupportPanel support_panel_;
     std::string message_,activeProfile_;
     std::future<std::vector<AppChoice>> discovery_;
