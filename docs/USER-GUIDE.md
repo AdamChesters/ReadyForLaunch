@@ -69,7 +69,7 @@ Stop cancels queued launches and asks identified apps participating in the sessi
 
 Apps can refuse, prompt for unsaved work, or hide in the tray. After ten seconds, remaining apps show **Needs attention**. Prerequisites remain open while a detected dependent is still running. If a brokered target cannot be identified, Status tells you to close it manually.
 
-There is no Emergency stop or force-kill action. Use the app's own Exit command or Windows Task Manager when required. In particular, apps such as PSVR2SimShaker can hide instead of exiting on a normal window-close request.
+There is no Emergency stop or force-kill action. Use the app's own Exit command or Windows Task Manager when required. In particular, apps such as dcs2psvr2-shaker can hide instead of exiting on a normal window-close request.
 
 ## Profiles and Help
 
@@ -77,7 +77,7 @@ Right-click any profile button or custom entry for **Rename**, **Copy from…**,
 
 Duplicate names are allowed and have distinct internal identities. Use **+** beside Custom profiles to create an empty profile or duplicate the current one. Changes autosave to `%LOCALAPPDATA%\ReadyForLaunch\settings.json`, with a last-good `.bak` backup.
 
-**Help** displays brief instructions and the original approved mockup. The concept image includes some controls removed during review; the current app and this guide describe the implemented behavior.
+**Help** displays brief instructions and the original concept mockup. The concept image includes some controls that were later dropped; the current app and this guide describe the implemented behavior.
 
 Editing is locked during a session. Closing ReadyForLaunch then hides it to the tray, whose menu can reopen it or Stop the session. With no active session, window close exits.
 

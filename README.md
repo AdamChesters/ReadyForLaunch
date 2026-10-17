@@ -27,9 +27,9 @@ Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLau
 - Glass-style status lights beside each row's status: off when not running, green when running, yellow while queued.
 - DCS World, MSFS 2024, MSFS 2020, X-Plane 12, and IL-2 starter profile buttons, plus custom profiles. Right-click to rename, copy from/to, or delete.
 - Stable Discord/Squirrel launch targets that survive version-folder updates.
-- **Open target folder** from an app's menu; **Help** includes the approved mockup and a short guide.
+- **Open target folder** from an app's menu; **Help** includes the concept mockup and a short guide.
 - **Stop** asks identified session apps to close, including reused instances. There is no force-kill control.
-- A compact native Windows interface and original icon in the PSVR2SimShaker visual style.
+- A compact native Windows interface and original icon in the [dcs2psvr2-shaker](https://github.com/AdamChesters/dcs2psvr2-shaker) visual style.
 
 ## Alpha limits
 
@@ -45,7 +45,7 @@ Remember each profile's app window positions, sizes, monitor assignments, and wi
 
 ## Build
 
-Use Visual Studio C++ tools, CMake, and vcpkg. The preset targets Visual Studio 2026; CI builds with the Windows 2025 runner's Visual Studio 2022 tools. Set `VCPKG_ROOT`, then:
+Use Visual Studio C++ tools, CMake, and vcpkg. The preset targets Visual Studio 2026. Set `VCPKG_ROOT`, then:
 
 ```powershell
 cmake --preset windows
@@ -56,13 +56,27 @@ ctest --preset release
 
 Packaging needs Inno Setup 6.3+; use `-SkipInstaller` for only a portable ZIP. With a preinstalled dependency tree, configure using `-DCMAKE_PREFIX_PATH=<x64-windows-static>` without the vcpkg toolchain. Dependencies are pinned in `vcpkg.json`.
 
-Licensed under **GPL-3.0**. The updater is adapted from [PSVR2SimShaker](https://github.com/AdamChesters/PSVR2SimShaker); see [third-party notices](THIRD_PARTY_NOTICES.md).
+Licensed under **GPL-3.0**. The updater is adapted from [dcs2psvr2-shaker](https://github.com/AdamChesters/dcs2psvr2-shaker) (formerly PSVR2SimShaker); see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 
 ## Feedback and support
 
-I love making things to have fun, share fun, and make life a lil better. If you got value out of one of them, feel free to buy us a coffee. Or a house. Push comes to shove, I prefer Aston Martin. Supporters get golden crowns on the Discord / tags on the subreddit!
+<p align="center">
+  <a href="https://discord.gg/fs4WyaQPA"><img src="assets/support/social-discord.svg" width="38" height="38" alt="Discord" title="Discord"></a>
+  <a href="https://www.reddit.com/r/AdamChsLab/"><img src="assets/support/social-reddit.svg" width="38" height="38" alt="Reddit" title="Reddit"></a>
+  <a href="https://github.com/AdamChesters"><img src="assets/support/social-github.svg" width="38" height="38" alt="GitHub" title="GitHub"></a>
+  <a href="https://www.linkedin.com/in/adamchesters/"><img src="assets/support/social-linkedin.svg" width="38" height="38" alt="LinkedIn" title="LinkedIn"></a>
+  <a href="https://adamch.com"><img src="assets/support/social-website.svg" width="38" height="38" alt="AdamCh.com" title="AdamCh.com"></a>
+</p>
 
-[GitHub Sponsors](https://github.com/sponsors/AdamChesters) | [Buy Me a Coffee](https://buymeacoffee.com/adamch) | [Support with PayPal](https://www.paypal.com/donate/?business=KLHSZPXTSVSAU&no_recurring=0&item_name=I%27ve+donated+to+lots+of+small+creators+for+their+useful+little+tools%2C+now+I+create+them.+Dig+one?+I%27d+love+your+support.&currency_code=AUD)
+<p align="center">Thanks for using ReadyForLaunch. I like to fix bugs and implement features rapidly. Issue? Idea? Let's work on it! Contact me anywhere you prefer.</p>
 
-[Discord](https://discord.gg/fs4WyaQPA) | [Reddit](https://www.reddit.com/r/AdamChsLab/) | [GitHub](https://github.com/AdamChesters) | [LinkedIn](https://www.linkedin.com/in/adamchesters/) | [AdamCh.com](https://adamch.com)
+<h3 align="center">Support</h3>
+
+<p align="center">I love making things to have fun, share fun, and make life a lil better. If you got value out of one of them, feel free to buy us a coffee. Or a house. Push comes to shove, I prefer Aston Martin. Supporters get golden crowns on the Discord / tags on the subreddit!</p>
+
+<p align="center">
+  <a href="https://github.com/sponsors/AdamChesters"><img src="assets/support/support-github.svg" width="220" height="86" alt="GitHub Sponsors" title="GitHub Sponsors"></a>
+  <a href="https://buymeacoffee.com/adamch"><img src="assets/support/support-buymeacoffee.svg" width="220" height="86" alt="Buy Me a Coffee" title="Buy Me a Coffee"></a>
+  <a href="https://www.paypal.com/donate/?business=KLHSZPXTSVSAU&amp;no_recurring=0&amp;item_name=I%27ve+donated+to+lots+of+small+creators+for+their+useful+little+tools%2C+now+I+create+them.+Dig+one?+I%27d+love+your+support.&amp;currency_code=AUD"><img src="assets/support/support-paypal.svg" width="220" height="86" alt="Support with PayPal" title="Support with PayPal"></a>
+</p>

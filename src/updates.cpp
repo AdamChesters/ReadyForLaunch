@@ -1,4 +1,4 @@
-// Adapted from Adam Chesters' PSVR2SimShaker updater (GPL-3.0).
+// Adapted from Adam Chesters' dcs2psvr2-shaker (formerly PSVR2SimShaker) updater (GPL-3.0).
 // See THIRD_PARTY_NOTICES.md for source snapshot provenance.
 #include "updates.hpp"
 #include "version.hpp"

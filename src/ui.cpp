@@ -59,7 +59,7 @@ Ui::Ui(HWND window,ID3D11Device* device,std::filesystem::path data,bool preview,
         Group vr{newId(),"VR & haptics",{},{}},tools{newId(),"Flight tools",{},{}},sim{newId(),"Simulator",vr.id,{}};
         auto add=[](Group& g,const char* name,Source source,Timing timing){Task t;t.id=newId();t.name=name;t.source=source;t.target="preview";t.timing=timing;g.tasks.push_back(t);};
         add(vr,"VR2JB",Source::Exe,Timing::Started);vr.tasks.back().readiness=Readiness::Completion;
-        add(vr,"SteamVR",Source::Steam,Timing::Finished);add(vr,"PSVR2SimShaker",Source::Exe,Timing::Started);
+        add(vr,"SteamVR",Source::Steam,Timing::Finished);add(vr,"dcs2psvr2-shaker",Source::Exe,Timing::Started);
         add(tools,"VoiceAttack",Source::Steam,Timing::Started);add(tools,"OpenKneeboard",Source::Installed,Timing::Delay);add(tools,"SRS",Source::Exe,Timing::Together);
         add(sim,"DCS World",Source::Exe,Timing::Started);p.groups={vr,tools,sim};
     }else {
@@ -341,7 +341,7 @@ void Ui::helpWindow() {
         ImGui::TextWrapped("Lights: off = not running, green = running, yellow = queued. Already-running apps are skipped and reported in Status.");
         ImGui::TextWrapped("Stop asks detected apps in the session to close, including existing instances. Some apps ignore it or hide to the tray. Unidentified apps need their own Exit command. Nothing is forcibly terminated.");
         secondary("Alpha: verify your own app stack. Process detection does not prove that a simulator or headset is ready; use manual confirmation when needed.");
-        ImGui::SeparatorText("Original design mockup");secondary("This is the approved concept image. Some controls have changed since this mockup, including removal of Emergency stop.");
+        ImGui::SeparatorText("Original design mockup");secondary("This is the original concept image. Some controls have changed since this mockup, including removal of Emergency stop.");
         if(!helpImage_.view)try{helpImage_=loadHelpImage(device_);}catch(const std::exception& e){ImGui::TextWrapped("%s",e.what());}
         if(helpImage_.view){float width=ImGui::GetContentRegionAvail().x;ImGui::Image(ImTextureID(reinterpret_cast<uintptr_t>(helpImage_.view.Get())),{width,width*helpImage_.height/helpImage_.width});}
         ImGui::EndChild();if(ImGui::Button("Close",uiSize(100,32))){helpOpen_=false;ImGui::CloseCurrentPopup();}ImGui::EndPopup();
