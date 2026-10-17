@@ -8,11 +8,11 @@
 
 By **Adam Chesters ([AdamChesters](https://github.com/AdamChesters))**.
 
-> **ALPHA — 0.2.0-alpha.3 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
+> **ALPHA — 0.2.0-alpha.4 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
 
 Choose a profile, arrange your apps, and press **GO**. Independent groups start together; each follows its own sequence. A group can also wait for another group.
 
-[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.3) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
+[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.4) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
 
 Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLaunch.exe`. Starter profiles are empty until you add your apps. The top-right version indicator checks GitHub Releases and offers verified updates.
 
@@ -29,7 +29,7 @@ Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLau
 - Stable Discord/Squirrel launch targets that survive version-folder updates.
 - **Open target folder** from an app's menu; **Help** includes the concept mockup and a short guide.
 - **Stop** asks identified session apps to close, including reused instances. There is no force-kill control.
-- A compact native Windows interface and original icon in the [dcs2psvr2-shaker](https://github.com/AdamChesters/dcs2psvr2-shaker) visual style.
+- A compact native Windows interface and original icon in the dcs2psvr2-shaker visual style.
 
 ## Alpha limits
 
@@ -56,7 +56,7 @@ ctest --preset release
 
 Packaging needs Inno Setup 6.3+; use `-SkipInstaller` for only a portable ZIP. With a preinstalled dependency tree, configure using `-DCMAKE_PREFIX_PATH=<x64-windows-static>` without the vcpkg toolchain. Dependencies are pinned in `vcpkg.json`.
 
-Licensed under **GPL-3.0**. The updater is adapted from [dcs2psvr2-shaker](https://github.com/AdamChesters/dcs2psvr2-shaker) (formerly PSVR2SimShaker); see [third-party notices](THIRD_PARTY_NOTICES.md).
+Licensed under **GPL-3.0**. The updater is adapted from dcs2psvr2-shaker (formerly PSVR2SimShaker); see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 
 ## Feedback and support

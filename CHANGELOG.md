@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0-alpha.4 - 17 October 2026
+
+- Renamed PSVR2SimShaker to its new name, dcs2psvr2-shaker, in credits, the Help sample profile and the user guide.
+- Plainer Help and guide wording for the original concept mockup.
+- README support section now uses image buttons, with cleaned image metadata.
+
 ## 0.2.0-alpha.3 - 17 October 2026
 
 - A failed app no longer holds up the launch sequence. Its row shows Failed, Status says what happened, and later apps launch as scheduled.

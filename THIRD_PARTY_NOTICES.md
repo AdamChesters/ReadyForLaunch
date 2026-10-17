@@ -4,7 +4,7 @@ ReadyForLaunch is by Adam Chesters and is licensed under **GNU GPL version 3**. 
 
 ## dcs2psvr2-shaker updater
 
-`src/updates.cpp`, `src/updates.hpp`, and `tests/update_tests.cpp` adapt the auto-updater from Adam Chesters' [dcs2psvr2-shaker](https://github.com/AdamChesters/dcs2psvr2-shaker) (formerly PSVR2SimShaker) under GPL-3.0. The Windows HTTPS release client, semantic-version handling, download validation, and tests originate from that implementation. ReadyForLaunch changes the repository, asset names, version integration, UI, and installer destination, and supports offline UI tests.
+`src/updates.cpp`, `src/updates.hpp`, and `tests/update_tests.cpp` adapt the auto-updater from Adam Chesters' dcs2psvr2-shaker (formerly PSVR2SimShaker) under GPL-3.0. The Windows HTTPS release client, semantic-version handling, download validation, and tests originate from that implementation. ReadyForLaunch changes the repository, asset names, version integration, UI, and installer destination, and supports offline UI tests.
 
 Adapted on 9 September 2026. SHA-256 hashes of the original source files:
 
