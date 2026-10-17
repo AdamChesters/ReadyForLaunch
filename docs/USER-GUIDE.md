@@ -47,7 +47,7 @@ Every later row offers:
 
 Changing the first row to On GO removes that group's dependency. If a later On GO row becomes first through moving/disabling rows, the existing group rule takes precedence and is shown in the UI.
 
-A failed app blocks its dependants while independent branches continue. Retry is available after the failed app has exited.
+A failed app never holds up the launch sequence. Its row shows **Failed**, Status opens with what happened to that app, and later apps still launch as scheduled. A delay counts from the previous app's launch attempt, whether that app keeps running, exits or fails. Retry is available after the failed app has exited.
 
 ## Readiness and status
 

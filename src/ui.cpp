@@ -75,7 +75,10 @@ void Ui::tick(){
     for(auto& n:engine_.nodes()) {
         if(n.launch.reused&&warnedReused_.insert(n.task.id).second)note("Warning: "+n.task.name+" is already running. Skipped starting another instance.",true);
         auto state=std::to_string(int(n.phase))+n.detail;
-        if(seen_[n.task.id]!=state){seen_[n.task.id]=state;note(n.task.name+": "+phaseName(n.phase)+(n.detail.empty()?"":" — "+n.detail),n.phase==Phase::Failed||n.phase==Phase::Attention);}
+        if(seen_[n.task.id]!=state){seen_[n.task.id]=state;
+            auto text=n.task.name+": "+phaseName(n.phase)+(n.detail.empty()?"":" — "+n.detail);
+            if(n.phase==Phase::Failed&&!engine_.stopping())text+=". Later apps still launch on schedule.";
+            note(text,n.phase==Phase::Failed||n.phase==Phase::Attention);}
     }
     if(preview_)return;
     if(observation_.valid()&&observation_.wait_for(std::chrono::milliseconds(0))==std::future_status::ready) {

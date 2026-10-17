@@ -56,7 +56,7 @@ void Engine::tick(int64_t now) {
                 if(now-n.detectedAt>=n.task.settleMs){n.phase=Phase::Completed;n.ready=true;n.detail="Finished successfully";}
             } else if(n.task.readiness==Readiness::Completion||!n.ready||state.exitCode!=0) {
                 n.phase=Phase::Failed;n.ready=false;n.detail="Exited with code "+std::to_string(state.exitCode)+(state.exitCode==0?" before startup was confirmed":"");
-            } else {n.phase=Phase::Completed;n.ready=false;n.detail="Exited";}
+            } else {n.phase=Phase::Completed;n.detail="Exited";} // It started, so it stays ready for its dependants.
         } else {
             bool detected=state.known&&state.alive;
             if(n.task.readiness==Readiness::Window)detected=detected&&state.window;
@@ -76,20 +76,21 @@ void Engine::tick(int64_t now) {
     for(size_t i=0;i<nodes_.size();++i) {
         auto& n=nodes_[i];if(n.phase!=Phase::Waiting)continue;
         bool ready=true;n.detail.clear();
+        // A failed app reports its own error; it never holds the rest of the sequence.
         for(auto d:n.dependencies) {
             const auto& prior=nodes_[d.node];
-            bool failed=prior.phase==Phase::Failed||prior.phase==Phase::Cancelled||(prior.phase==Phase::Completed&&!prior.ready);
-            bool satisfied=d.dispatch?prior.dispatched&&now-prior.dispatchedAt>=d.delayMs:prior.ready;
-            if(failed||!satisfied){ready=false;n.detail=(failed?"Blocked by ":"Waiting for ")+prior.task.name;break;}
+            bool settled=prior.ready||prior.phase==Phase::Failed||prior.phase==Phase::Completed;
+            bool satisfied=d.dispatch?prior.phase!=Phase::Waiting&&now-prior.dispatchedAt>=d.delayMs:settled;
+            if(!satisfied){ready=false;n.detail="Waiting for "+prior.task.name;break;}
         }
         if(ready)eligible.push_back(i);
     }
     for(auto i:eligible) {
-        auto& n=nodes_[i];
+        auto& n=nodes_[i];n.dispatchedAt=now; // Delays count from the launch attempt, even one that fails.
         try {n.launch=backend_.start(n.task);}catch(const std::exception& error){n.launch.error=error.what();}
         if(n.launch.ticket<0&&n.launch.error.empty())n.launch.error="No launch handle was returned";
         if(!n.launch.error.empty()){n.phase=Phase::Failed;n.detail=n.launch.error;continue;}
-        n.dispatched=true;n.dispatchedAt=now;n.phase=Phase::Launching;
+        n.dispatched=true;n.phase=Phase::Launching;
         n.detail=n.task.readiness==Readiness::Manual?"Check the app, then Confirm ready":"Waiting for startup";
     }
 }
