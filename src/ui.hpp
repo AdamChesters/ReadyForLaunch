@@ -35,7 +35,7 @@ class Ui {
     void save();void scan(int tab);void appPicker();void taskEditor();void profileEditor();void groupEditor();
     void startEdit(const std::string& group,const std::string& task={});
     void groupGate(Profile& profile,Group& group);
-    void rows(Profile& profile,Group& group,bool active);
+    void rows(Profile& profile,Group& group,bool active,bool labels);
     void moveTask(const std::string& id,const std::string& destination,int before=-1);
     void note(const std::string& text,bool alert=false);
     void profileContext(Profile& profile);void profileActionDialog();

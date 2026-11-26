@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-alpha.5 - 26 November 2026
+
+- Each app row now has a GO tick and a Stop tick. Untick Stop to leave an app running when you press Stop.
+- A failed app can be edited during the session, then retried.
+- Apps that need administrator rights now show the Windows approval prompt instead of failing with "requires elevation".
+- When Stop cannot finish (an app ignores it or cannot be identified), the Stop button becomes Reset, which clears the session without closing anything.
+
 ## 0.2.0-alpha.4 - 17 October 2026
 
 - Renamed PSVR2SimShaker to its new name, dcs2psvr2-shaker, in credits, the Help sample profile and the user guide.

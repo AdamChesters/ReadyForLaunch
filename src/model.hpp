@@ -15,7 +15,7 @@ struct Task {
     Source source = Source::Exe;
     Timing timing = Timing::Started;
     Readiness readiness = Readiness::Process;
-    bool enabled = true;
+    bool enabled = true, stop = true; // enabled: started on GO. stop: closed on Stop.
     int delayMs = 5000, timeoutMs = 60000, settleMs = 1000;
 };
 struct Group {

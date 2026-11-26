@@ -131,23 +131,31 @@ void Ui::groupGate(Profile& profile,Group& group) {
         }ImGui::EndCombo();
     }tooltip(label+". This rule stays with the group when its first task changes.");
 }
-void Ui::rows(Profile& p,Group& g,bool active) {
+void Ui::rows(Profile& p,Group& g,bool active,bool labels) {
     std::function<void()> mutation;
     ImGuiTableFlags flags=ImGuiTableFlags_SizingStretchProp|ImGuiTableFlags_BordersInnerH;
-    if(ImGui::BeginTable("Apps",6,flags)) {
+    if(ImGui::BeginTable("Apps",7,flags)) {
         ImGui::TableSetupColumn("Move",ImGuiTableColumnFlags_WidthFixed,px(18));
-        ImGui::TableSetupColumn("Enable",ImGuiTableColumnFlags_WidthFixed,px(25));
+        ImGui::TableSetupColumn("GO",ImGuiTableColumnFlags_WidthFixed,px(30));
+        ImGui::TableSetupColumn("Stop",ImGuiTableColumnFlags_WidthFixed,px(30));
         ImGui::TableSetupColumn("Application",ImGuiTableColumnFlags_WidthStretch,1);
         ImGui::TableSetupColumn("Timing",ImGuiTableColumnFlags_WidthFixed,px(252));
         ImGui::TableSetupColumn("State",ImGuiTableColumnFlags_WidthFixed,px(170));
         ImGui::TableSetupColumn("Edit",ImGuiTableColumnFlags_WidthFixed,px(30));
+        if(labels) { // Column labels once, on the first group with apps; the columns line up across groups.
+            ImGui::TableNextRow();ImGui::PushFont(nullptr,13);
+            for(int column:{1,2}){ImGui::TableSetColumnIndex(column);ImGui::TextColored(muted,"%s",ImGui::TableGetColumnName(column));}
+            ImGui::PopFont();
+        }
         bool first=true;
         for(size_t i=0;i<g.tasks.size();++i) {
             auto& t=g.tasks[i];ImGui::PushID(t.id.c_str());ImGui::TableNextRow();ImGui::TableNextColumn();ImGui::AlignTextToFramePadding();
             ImGui::BeginDisabled(active);ImGui::Selectable("::",false,0,uiSize(18,28));
             if(ImGui::BeginDragDropSource()){ImGui::SetDragDropPayload("RFL_TASK",t.id.c_str(),t.id.size()+1);ImGui::TextUnformatted(t.name.c_str());ImGui::EndDragDropSource();}
             if(ImGui::BeginDragDropTarget()){if(auto payload=ImGui::AcceptDragDropPayload("RFL_TASK")){auto id=std::string(static_cast<const char*>(payload->Data));auto dest=g.id;int index=int(i);mutation=[this,id,dest,index]{moveTask(id,dest,index);};}ImGui::EndDragDropTarget();}
-            ImGui::TableNextColumn();if(ImGui::Checkbox("##Enabled",&t.enabled))dirty_=true;ImGui::EndDisabled();
+            ImGui::TableNextColumn();if(ImGui::Checkbox("##Go",&t.enabled))dirty_=true;ImGui::EndDisabled();tooltip("Start on GO");
+            ImGui::TableNextColumn();ImGui::BeginDisabled(!t.enabled||(active&&engine_.stopping()));
+            if(ImGui::Checkbox("##Stop",&t.stop)){dirty_=true;engine_.setStop(t.id,t.stop);}ImGui::EndDisabled();tooltip("Close on Stop");
             ImGui::TableNextColumn();ImGui::AlignTextToFramePadding();ImGui::PushFont(ImGui::GetIO().Fonts->Fonts.Size>2?ImGui::GetIO().Fonts->Fonts[2]:nullptr,19);ImGui::TextUnformatted(t.name.c_str());ImGui::PopFont();
             tooltip(t.target);ImGui::SameLine();ImGui::PushFont(nullptr,12);ImGui::TextColored(muted," %s",sourceName(t.source));ImGui::PopFont();
             ImGui::TableNextColumn();ImGui::BeginDisabled(active||!t.enabled);
@@ -176,8 +184,9 @@ void Ui::rows(Profile& p,Group& g,bool active) {
             ImGui::TableNextColumn();if(ImGui::SmallButton("..."))ImGui::OpenPopup("Actions");
             if(ImGui::BeginPopup("Actions")) {
                 if(ImGui::MenuItem("Open target folder"))try{auto folder=targetFolder(t);if(reinterpret_cast<INT_PTR>(ShellExecuteW(window_,L"open",folder.c_str(),nullptr,nullptr,SW_SHOWNORMAL))<=32)throw std::runtime_error("Windows could not open the target folder");}catch(const std::exception& e){note(e.what(),true);}
-                ImGui::Separator();ImGui::BeginDisabled(active);
-                if(ImGui::MenuItem("Edit app")){auto gid=g.id,tid=t.id;mutation=[this,gid,tid]{startEdit(gid,tid);};}
+                ImGui::Separator();bool failed=state&&state->phase==Phase::Failed&&!engine_.stopping();
+                if(ImGui::MenuItem("Edit app",nullptr,false,!active||failed)){auto gid=g.id,tid=t.id;mutation=[this,gid,tid]{startEdit(gid,tid);};}
+                ImGui::BeginDisabled(active);
                 if(ImGui::MenuItem("Move up",nullptr,false,i>0)){auto id=t.id,dest=g.id;int pos=int(i)-1;mutation=[this,id,dest,pos]{moveTask(id,dest,pos);};}
                 if(ImGui::MenuItem("Move down",nullptr,false,i+1<g.tasks.size())){auto id=t.id,dest=g.id;int pos=int(i)+2;mutation=[this,id,dest,pos]{moveTask(id,dest,pos);};}
                 if(ImGui::BeginMenu("Move to group")){for(auto& other:p.groups)if(other.id!=g.id){ImGui::PushID(other.id.c_str());if(ImGui::MenuItem(other.name.c_str())){auto id=t.id,dest=other.id;mutation=[this,id,dest]{moveTask(id,dest);};}ImGui::PopID();}ImGui::EndMenu();}
@@ -277,7 +286,7 @@ void Ui::taskEditor() {
         normalizeLaunchTarget(draft_);
         for(auto& g:selected().groups)if(g.id==editGroup_) {
             if(editTask_.empty())g.tasks.push_back(draft_);else for(auto& t:g.tasks)if(t.id==editTask_)t=draft_;
-        }dirty_=true;editOpen_=false;ImGui::CloseCurrentPopup();
+        }engine_.update(draft_);dirty_=true;editOpen_=false;ImGui::CloseCurrentPopup();
     }ImGui::EndDisabled();ImGui::SameLine();if(ImGui::Button("Cancel",uiSize(100,38))){editOpen_=false;ImGui::CloseCurrentPopup();}ImGui::EndPopup();
 }
 Profile* Ui::profileById(const std::string& id){for(auto& p:settings_.profiles)if(p.id==id)return &p;return nullptr;}
@@ -339,7 +348,7 @@ void Ui::helpWindow() {
         ImGui::TextWrapped("Choose a profile, add your apps, then press GO. Right-click a profile to rename, copy or delete it. Drag apps to set their order.");
         ImGui::TextWrapped("Groups start together or after another group. Any later app can choose On GO to start immediately. Other timing rules wait for the previous app or a delay.");
         ImGui::TextWrapped("Lights: off = not running, green = running, yellow = queued. Already-running apps are skipped and reported in Status.");
-        ImGui::TextWrapped("Stop asks detected apps in the session to close, including existing instances. Some apps ignore it or hide to the tray. Unidentified apps need their own Exit command. Nothing is forcibly terminated.");
+        ImGui::TextWrapped("Each app has a GO tick and a Stop tick. Stop asks ticked apps in the session to close, including existing instances. Some apps ignore it or hide to the tray; Reset then clears the session. Nothing is forcibly terminated.");
         secondary("Alpha: verify your own app stack. Process detection does not prove that a simulator or headset is ready; use manual confirmation when needed.");
         ImGui::SeparatorText("Original design mockup");secondary("This is the original concept image. Some controls have changed since this mockup, including removal of Emergency stop.");
         if(!helpImage_.view)try{helpImage_=loadHelpImage(device_);}catch(const std::exception& e){ImGui::TextWrapped("%s",e.what());}
@@ -430,7 +439,7 @@ void Ui::render() {
     secondary("Groups run together, or follow another group. Apps keep their own sequence.");
     float footer=px(83);
     ImGui::BeginChild("Stack",{0,-footer},ImGuiChildFlags_None);
-    std::string addGroup,editGroup,removeGroup;
+    std::string addGroup,editGroup,removeGroup;bool labelled=false;
     for(auto& g:p.groups) {
         ImGui::PushID(g.id.c_str());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,uiSize(13,10));
@@ -446,7 +455,7 @@ void Ui::render() {
             tooltip("Move or remove apps first. Groups referenced by another group cannot be deleted.");ImGui::EndPopup();
         }ImGui::EndDisabled();ImGui::Separator();
         if(g.tasks.empty())secondary("Add an app from your running windows, EXE, Steam, or Windows app list.");
-        else rows(p,g,active);
+        else {rows(p,g,active,!labelled);labelled=true;}
         ImGui::EndChild();ImGui::PopStyleVar();
         if(!active&&ImGui::BeginDragDropTarget()){if(auto payload=ImGui::AcceptDragDropPayload("RFL_TASK"))moveTask(static_cast<const char*>(payload->Data),g.id);ImGui::EndDragDropTarget();}
         ImGui::PopID();ImGui::Spacing();
@@ -463,8 +472,14 @@ void Ui::render() {
     else ImGui::TextColored(muted,"Alpha · Verify your app stack before relying on it.");
     int count=0;for(auto& g:p.groups)for(auto& t:g.tasks)if(t.enabled)++count;
     ImGui::AlignTextToFramePadding();ImGui::TextColored(muted,"%d apps  ·  %zu groups  ·  %s",count,p.groups.size(),active?(engine_.stopping()?"Stopping":"Session active"):"Ready");
-    right(385);if(ImGui::Button("Status",uiSize(120,43)))statusOpen_=!statusOpen_;ImGui::SameLine();ImGui::BeginDisabled(!active);
-    if(ImGui::Button("Stop",uiSize(100,43)))stop();ImGui::EndDisabled();tooltip("gracefully commands shutdown of apps in the list. Some may ignore it");
+    right(385);if(ImGui::Button("Status",uiSize(120,43)))statusOpen_=!statusOpen_;ImGui::SameLine();
+    if(engine_.stuck()) {
+        if(ImGui::Button("Reset",uiSize(100,43))){engine_.reset();note("Session cleared. Apps still open were left as they are.");}
+        tooltip("Clear this session. Apps still open are left as they are.");
+    }else {
+        ImGui::BeginDisabled(!active);if(ImGui::Button("Stop",uiSize(100,43)))stop();ImGui::EndDisabled();
+        tooltip("gracefully commands shutdown of apps with Stop ticked. Some may ignore it");
+    }
     ImGui::SameLine();ImGui::BeginDisabled(active||installRequested_);ImGui::PushStyleColor(ImGuiCol_Text,{.02f,.07f,.09f,1});
     if(button("GO",uiSize(145,43),accent))beginSession();ImGui::PopStyleColor();ImGui::EndDisabled();
     if(!captureView_.empty()) {
@@ -484,7 +499,7 @@ void Ui::render() {
     if(ImGui::BeginPopupModal("Settings",&settingsOpen_)) {
         ImGui::Text("ReadyForLaunch %s",appVersionDisplay);secondary("by Adam Chesters · Early test software");
         if(ImGui::Button("Open settings folder")){std::filesystem::create_directories(directory_);ShellExecuteW(window_,L"open",directory_.c_str(),nullptr,nullptr,SW_SHOWNORMAL);}
-        secondary("Settings save automatically. Stop requests closure of detected apps, including already-running instances; unidentified apps need manual closure.");
+        secondary("Settings save automatically. Stop requests closure of detected apps with Stop ticked, including already-running instances; unidentified apps need manual closure.");
         ImGui::SeparatorText("Current profile");ImGui::BeginDisabled(active);
         if(input("Name",selected().name))dirty_=true;
         if(ImGui::Button("Duplicate profile")){profileName_=selected().name+" copy";profileOpen_=true;settingsOpen_=false;ImGui::CloseCurrentPopup();}

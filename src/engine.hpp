@@ -36,6 +36,10 @@ public:
     void stop(int64_t now);
     void confirm(const std::string& id);
     bool retry(const std::string& id);
+    void setStop(const std::string& id,bool stop);
+    bool update(const Task& task);
+    bool stuck()const;
+    void reset();
     bool active();
     const std::vector<Node>& nodes()const{return nodes_;}
     const Node* find(const std::string& id)const;

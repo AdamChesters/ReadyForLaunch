@@ -73,7 +73,7 @@ Json serialize(const Settings& s) {
         Json jp={{"id",p.id},{"name",p.name},{"builtin",p.builtin},{"groups",Json::array()}};
         for(auto& g:p.groups) {
             Json jg={{"id",g.id},{"name",g.name},{"afterGroup",g.afterGroup},{"tasks",Json::array()}};
-            for(auto& t:g.tasks)jg["tasks"].push_back({{"id",t.id},{"name",t.name},{"source",int(t.source)},{"target",t.target},{"arguments",t.arguments},{"directory",t.directory},{"probe",t.probe},{"application",t.application},{"timing",int(t.timing)},{"readiness",int(t.readiness)},{"enabled",t.enabled},{"delayMs",t.delayMs},{"timeoutMs",t.timeoutMs},{"settleMs",t.settleMs}});
+            for(auto& t:g.tasks)jg["tasks"].push_back({{"id",t.id},{"name",t.name},{"source",int(t.source)},{"target",t.target},{"arguments",t.arguments},{"directory",t.directory},{"probe",t.probe},{"application",t.application},{"timing",int(t.timing)},{"readiness",int(t.readiness)},{"enabled",t.enabled},{"stop",t.stop},{"delayMs",t.delayMs},{"timeoutMs",t.timeoutMs},{"settleMs",t.settleMs}});
             jp["groups"].push_back(jg);
         } root["profiles"].push_back(jp);
     } return root;
@@ -93,7 +93,7 @@ Settings deserialize(const Json& j) {
                 t.source=Source(source);t.timing=Timing(timing);t.readiness=Readiness(ready);
                 t.arguments=jt.value("arguments","");t.directory=jt.value("directory","");t.probe=jt.value("probe","");
                 t.application=jt.value("application","");
-                t.enabled=jt.value("enabled",true);t.delayMs=jt.value("delayMs",5000);t.timeoutMs=jt.value("timeoutMs",60000);t.settleMs=jt.value("settleMs",1000);
+                t.enabled=jt.value("enabled",true);t.stop=jt.value("stop",true);t.delayMs=jt.value("delayMs",5000);t.timeoutMs=jt.value("timeoutMs",60000);t.settleMs=jt.value("settleMs",1000);
                 g.tasks.push_back(t);
             }p.groups.push_back(g);
         }s.profiles.push_back(p);

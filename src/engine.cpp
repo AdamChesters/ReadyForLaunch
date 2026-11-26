@@ -36,9 +36,25 @@ bool Engine::retry(const std::string& id) {
         n.phase=Phase::Waiting;n.launch={};n.dispatched=false;n.ready=false;n.confirmed=false;n.detectedAt=-1;n.detail.clear();return true;
     }return false;
 }
+void Engine::setStop(const std::string& id,bool stop) {if(!stopping_)for(auto& n:nodes_)if(n.task.id==id)n.task.stop=stop;}
+// An edited failed app is retried with its new details.
+bool Engine::update(const Task& task) {
+    if(stopping_)return false;
+    for(auto& n:nodes_)if(n.task.id==task.id&&n.phase==Phase::Failed){n.task=task;return true;}
+    return false;
+}
+// Stop has done all it can and something still needs the user.
+bool Engine::stuck()const {
+    if(!stopping_)return false;
+    bool attention=false;
+    for(auto& n:nodes_){if(n.phase==Phase::Stopping)return false;if(n.phase==Phase::Attention)attention=true;}
+    return attention;
+}
+void Engine::reset() {nodes_.clear();stopping_=false;}
 bool Engine::active() {
     for(auto& n:nodes_) {
         if(!stopping_&&(n.phase==Phase::Waiting||n.phase==Phase::Launching||n.phase==Phase::Running||n.phase==Phase::Attention))return true;
+        if(stopping_&&!n.task.stop)continue; // Left running by choice, so it does not hold the session open.
         if(n.launch.ticket>=0&&(backend_.ownedAlive(n.launch.ticket)||
             (stopping_&&n.phase!=Phase::Stopped&&n.phase!=Phase::Attention&&backend_.poll(n.launch.ticket).alive)))return true;
     }return false;
@@ -99,7 +115,7 @@ bool Engine::hasLiveDependent(size_t index) {
     std::function<bool(size_t)> visit=[&](size_t root) {
         if(seen[root])return false;seen[root]=true;
         for(size_t i=0;i<nodes_.size();++i)for(auto d:nodes_[i].dependencies)if(d.node==root) {
-            if(nodes_[i].launch.ticket>=0) {
+            if(nodes_[i].task.stop&&nodes_[i].launch.ticket>=0) {
                 if(backend_.ownedAlive(nodes_[i].launch.ticket))return true;
                 if(!nodes_[i].launch.managed) {
                     auto state=backend_.poll(nodes_[i].launch.ticket);
@@ -119,6 +135,12 @@ void Engine::stopTick(int64_t now) {
     for(size_t reverse=nodes_.size();reverse>0;--reverse) {
         auto i=reverse-1;auto& n=nodes_[i];if(n.launch.ticket<0)continue;
         auto observation=backend_.poll(n.launch.ticket);
+        if(!n.task.stop) { // Stop is unticked for this app: it stays open.
+            n.alive=observation.alive;
+            if(observation.known&&!observation.alive&&!backend_.ownedAlive(n.launch.ticket)){n.phase=Phase::Stopped;n.detail="Stopped";}
+            else if(n.phase==Phase::Launching||n.phase==Phase::Running){n.phase=Phase::Running;n.detail="Left running";}
+            continue;
+        }
         if(!backend_.ownedAlive(n.launch.ticket)&&!observation.alive) {
             if(!observation.known){n.phase=Phase::Attention;n.detail="App process could not be identified; close it manually";}
             else {n.phase=Phase::Stopped;n.detail="Stopped";}

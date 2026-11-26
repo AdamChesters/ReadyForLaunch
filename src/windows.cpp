@@ -282,11 +282,19 @@ Launch WindowsBackend::start(const Task& original) {
             std::wstring command=quote(path);if(!task.arguments.empty())command+=L" "+wide(task.arguments);
             auto directory=task.directory.empty()?fs::path(path).parent_path().wstring():wide(task.directory);
             STARTUPINFOW startup{sizeof(startup)};PROCESS_INFORMATION info{};
-            if(!CreateProcessW(path.c_str(),command.data(),nullptr,nullptr,FALSE,CREATE_SUSPENDED,nullptr,directory.empty()?nullptr:directory.c_str(),&startup,&info))return {-1,false,false,systemError()};
-            Handle thread(info.hThread);record.process=Handle(info.hProcess);
-            if(!AssignProcessToJobObject(record.job.h,record.process.h)){auto error=systemError();TerminateProcess(record.process.h,1);return {-1,false,false,"Cannot track process safely: "+error};}
-            if(ResumeThread(thread.h)==DWORD(-1)){auto error=systemError();TerminateJobObject(record.job.h,1);return {-1,false,false,error};}
-            record.managed=true;
+            if(CreateProcessW(path.c_str(),command.data(),nullptr,nullptr,FALSE,CREATE_SUSPENDED,nullptr,directory.empty()?nullptr:directory.c_str(),&startup,&info)) {
+                Handle thread(info.hThread);record.process=Handle(info.hProcess);
+                if(!AssignProcessToJobObject(record.job.h,record.process.h)){auto error=systemError();TerminateProcess(record.process.h,1);return {-1,false,false,"Cannot track process safely: "+error};}
+                if(ResumeThread(thread.h)==DWORD(-1)){auto error=systemError();TerminateJobObject(record.job.h,1);return {-1,false,false,error};}
+                record.managed=true;
+            } else if(GetLastError()==ERROR_ELEVATION_REQUIRED) {
+                // The app asks for administrator rights: Windows shows its own prompt. An elevated app is observed, never owned.
+                auto arguments=wide(task.arguments);
+                SHELLEXECUTEINFOW launch{sizeof(launch)};launch.fMask=SEE_MASK_NOCLOSEPROCESS|SEE_MASK_FLAG_NO_UI;launch.lpVerb=L"open";launch.lpFile=path.c_str();
+                launch.lpParameters=arguments.empty()?nullptr:arguments.c_str();launch.lpDirectory=directory.empty()?nullptr:directory.c_str();launch.nShow=SW_SHOWNORMAL;
+                if(!ShellExecuteExW(&launch))return {-1,false,false,GetLastError()==ERROR_CANCELLED?"Administrator approval was declined":systemError()};
+                record.job=Handle();record.process=Handle(launch.hProcess);
+            } else return {-1,false,false,systemError()};
             if(task.source==Source::Squirrel)record.launcher=std::move(record.process);
         }
     } else if(task.source==Source::Steam) {
@@ -315,7 +323,7 @@ Launch WindowsBackend::start(const Task& original) {
 }
 Observation WindowsBackend::poll(int ticket) {
     auto& record=impl_->records.at(ticket);
-    if(!record.process.h&&record.task.source!=Source::Exe)record.process=Handle(targetProcess(record.task));
+    if(!record.process.h)record.process=Handle(targetProcess(record.task)); // Also an elevated EXE that Windows started without handing back a process.
     if(!record.process.h) {
         if(record.launcher.h&&WaitForSingleObject(record.launcher.h,0)==WAIT_OBJECT_0){DWORD code=0;GetExitCodeProcess(record.launcher.h,&code);if(code)return {true,false,false,true,int(code)};}
         return {};

@@ -8,11 +8,11 @@
 
 By **Adam Chesters ([AdamChesters](https://github.com/AdamChesters))**.
 
-> **ALPHA — 0.2.0-alpha.4 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
+> **ALPHA — 0.2.0-alpha.5 is early test software.** Expect bugs and incomplete app compatibility. Verify your own launch stack and keep a backup of your profiles before relying on it. Process/window detection does not prove a simulator or headset is ready. Stop is a best-effort close request; apps may remain running. This build is unsigned.
 
 Choose a profile, arrange your apps, and press **GO**. Independent groups start together; each follows its own sequence. A group can also wait for another group.
 
-[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.4) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
+[Download the Windows x64 alpha](https://github.com/AdamChesters/ReadyForLaunch/releases/tag/v0.2.0-alpha.5) · [Quick guide](docs/USER-GUIDE.md) · [Changes](CHANGELOG.md)
 
 Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLaunch.exe`. Starter profiles are empty until you add your apps. The top-right version indicator checks GitHub Releases and offers verified updates.
 
@@ -28,7 +28,8 @@ Use the per-user **Setup.exe**, or extract the portable ZIP and run `ReadyForLau
 - DCS World, MSFS 2024, MSFS 2020, X-Plane 12, and IL-2 starter profile buttons, plus custom profiles. Right-click to rename, copy from/to, or delete.
 - Stable Discord/Squirrel launch targets that survive version-folder updates.
 - **Open target folder** from an app's menu; **Help** includes the concept mockup and a short guide.
-- **Stop** asks identified session apps to close, including reused instances. There is no force-kill control.
+- Each app has a **GO** tick and a **Stop** tick: choose what GO starts and what Stop closes.
+- **Stop** asks identified session apps to close, including reused instances. There is no force-kill control. **Reset** clears a session that Stop could not finish.
 - A compact native Windows interface and original icon in the dcs2psvr2-shaker visual style.
 
 ## Alpha limits

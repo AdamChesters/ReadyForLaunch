@@ -1,4 +1,4 @@
-# ReadyForLaunch 0.2.0-alpha.4
+# ReadyForLaunch 0.2.0-alpha.5
 
 **Intended for flight sims, usable for anything** — by Adam Chesters.
 
@@ -28,7 +28,7 @@ Use an app row's **… → Open target folder** to open its containing or resolv
 
 ## Groups and timing
 
-Add groups with **+ Add group**. Drag the `::` row handle or use the row menu to reorder/move apps. Each checkbox enables that app for the profile.
+Add groups with **+ Add group**. Drag the `::` row handle or use the row menu to reorder/move apps. Each row has two ticks. **GO** starts the app on GO. **Stop** closes it on Stop; untick it to leave that app running. The Stop tick can change during a session, until Stop is pressed.
 
 The **first enabled task** shows the group's start rule:
 
@@ -47,7 +47,9 @@ Every later row offers:
 
 Changing the first row to On GO removes that group's dependency. If a later On GO row becomes first through moving/disabling rows, the existing group rule takes precedence and is shown in the UI.
 
-A failed app never holds up the launch sequence. Its row shows **Failed**, Status opens with what happened to that app, and later apps still launch as scheduled. A delay counts from the previous app's launch attempt, whether that app keeps running, exits or fails. Retry is available after the failed app has exited.
+A failed app never holds up the launch sequence. Its row shows **Failed**, Status opens with what happened to that app, and later apps still launch as scheduled. A delay counts from the previous app's launch attempt, whether that app keeps running, exits or fails. Retry is available after the failed app has exited. A failed row can be edited during the session through **… → Edit app**; Retry then uses the new details.
+
+An app that requires administrator rights shows the Windows approval prompt when it launches. ReadyForLaunch does not run elevated, so Stop usually cannot close such an app; untick its Stop tick or close it yourself.
 
 ## Readiness and status
 
@@ -63,11 +65,13 @@ A detected process or responding window does not prove a flight has loaded or a 
 
 ## Stop
 
-Hover text: **gracefully commands shutdown of apps in the list. Some may ignore it**
+Hover text: **gracefully commands shutdown of apps with Stop ticked. Some may ignore it**
 
-Stop cancels queued launches and asks identified apps participating in the session to close in reverse dependency order. **This includes apps that were already running and reused by GO.** It does not close disabled rows or apps that have not participated in the session.
+Stop cancels queued launches and asks identified apps participating in the session to close in reverse dependency order. **This includes apps that were already running and reused by GO.** It does not close rows with Stop or GO unticked, or apps that have not participated in the session. An app left running shows **Running** and no longer holds the session open.
 
 Apps can refuse, prompt for unsaved work, or hide in the tray. After ten seconds, remaining apps show **Needs attention**. Prerequisites remain open while a detected dependent is still running. If a brokered target cannot be identified, Status tells you to close it manually.
+
+When Stop has done all it can and an app still needs attention, the Stop button becomes **Reset**. Reset clears the session so the profile can be edited and GO pressed again. It closes nothing.
 
 There is no Emergency stop or force-kill action. Use the app's own Exit command or Windows Task Manager when required. In particular, apps such as dcs2psvr2-shaker can hide instead of exiting on a normal window-close request.
 
